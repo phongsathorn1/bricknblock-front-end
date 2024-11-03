@@ -1,5 +1,6 @@
 'use client';
 
+import { mockRWAItems } from '@/lib/data/mock-data';
 import { RWACardProps } from '@/lib/types/rwa';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -179,19 +180,3 @@ export default function Home() {
     </main>
   );
 }
-
-// Use the same mock data from your listings page
-const mockRWAItems: RWACardProps[] = [
-  {
-    id: '1',
-    name: 'Luxury Villa Ubud',
-    location: 'Bali, Indonesia',
-    raisedAmount: 750000,
-    targetAmount: 1000000,
-    price: '250,000',
-    currency: 'USDT',
-    image:
-      'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop&q=60',
-  },
-  // ... rest of your mock data
-];

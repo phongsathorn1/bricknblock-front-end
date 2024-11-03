@@ -2,51 +2,12 @@
 
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
-
-// You can fetch the actual data using the ID
-const mockRWADetail = {
-  id: '1',
-  name: 'Luxury Villa Ubud',
-  location: 'Bali, Indonesia',
-  raisedAmount: 750000,
-  targetAmount: 1000000,
-  price: '250,000',
-  currency: 'USDT',
-  image:
-    'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop&q=60',
-  description:
-    'Nestled in the heart of Ubud, this luxury villa offers the perfect blend of traditional Balinese architecture and modern comfort. The property features 5 bedrooms, a private pool, and stunning rice field views.',
-  amenities: [
-    'Private Pool',
-    'Garden View',
-    '5 Bedrooms',
-    'Smart Home System',
-    'Security Service',
-    '24/7 Concierge',
-  ],
-  details: {
-    size: '500 sqm',
-    built: '2022',
-    type: 'Villa',
-    status: 'Ready for Investment',
-  },
-  documents: [
-    { name: 'Property Deed', verified: true },
-    { name: 'Building Permit', verified: true },
-    { name: 'Tax Documents', verified: true },
-  ],
-  investment: {
-    minInvestment: '1,000',
-    expectedReturn: '12%',
-    investmentPeriod: '36 months',
-    totalShares: '1000',
-    availableShares: '250',
-  },
-};
+import { mockRWADetails } from '@/lib/data/mock-data';
 
 export default function RWADetail() {
   const params = useParams();
   const { id } = params;
+  const mockRWADetail = mockRWADetails[id as string];
 
   return (
     <div className='min-h-screen bg-prime-black'>
