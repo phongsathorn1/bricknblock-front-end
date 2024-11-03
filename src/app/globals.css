@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-prime-black text-text-primary antialiased;
+  }
+}
+
+@layer components {
+  .heading-prime {
+    @apply font-display font-bold uppercase tracking-wider text-text-primary;
+  }
+
+  .btn-prime {
+    @apply px-6 
+           py-3 
+           bg-prime-gray
+           border border-prime-gold/30
+           hover:border-prime-gold
+           text-text-primary
+           rounded
+           transition-all 
+           duration-300
+           font-body
+           text-sm
+           uppercase
+           tracking-wider;
+  }
+
+  .nav-prime {
+    @apply px-4 
+           py-2 
+           text-text-secondary
+           hover:text-text-primary
+           transition-colors 
+           duration-300
+           uppercase
+           text-sm
+           tracking-wider
+           font-body;
+  }
+
+  .card-prime {
+    @apply bg-prime-gray
+           border border-prime-gold/10
+           rounded
+           p-6
+           transition-all
+           duration-300
+           hover:border-prime-gold/30;
+  }
+}
+
+/* Custom utilities */
+.text-stroke {
+  -webkit-text-stroke: 1px theme('colors.text.primary');
+  color: transparent;
+}
+
+.text-shadow-gold {
+  text-shadow: 0 0 20px theme('colors.prime.gold');
+}
