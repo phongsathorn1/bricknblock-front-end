@@ -120,7 +120,7 @@ export default function ExploreDAOs() {
                 {/* Header */}
                 <div className='mb-12'>
                     <h1 className='font-display text-4xl uppercase tracking-wider text-text-primary mb-2'>
-                        Explore DAOs
+                        My DAOs
                     </h1>
                     <p className='text-text-secondary'>
                         Discover and participate in decentralized governance
