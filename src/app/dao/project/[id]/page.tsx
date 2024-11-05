@@ -61,6 +61,7 @@ const ProposalCard = ({ proposal, projectId }: { proposal: Proposal, projectId: 
     proposal.votes.for + proposal.votes.against + proposal.votes.abstain;
   const forPercentage = (proposal.votes.for / totalVotes) * 100;
   const againstPercentage = (proposal.votes.against / totalVotes) * 100;
+  const abstainPercentage = (proposal.votes.abstain / totalVotes) * 100;
 
   return (
     <Link
@@ -96,26 +97,39 @@ const ProposalCard = ({ proposal, projectId }: { proposal: Proposal, projectId: 
         </div>
       </div>
 
+      <p className='text-text-secondary mb-6 line-clamp-2'>{proposal.description}</p>
+
       <div className='space-y-2'>
         <div className='flex justify-between text-sm text-text-secondary mb-1'>
           <span>For</span>
-          <span>{forPercentage.toFixed(1)}%</span>
+          <span>{forPercentage.toFixed(1)}% ({(proposal.votes.for / 1000000).toFixed(2)}M)</span>
         </div>
         <div className='h-2 bg-prime-black/50 rounded-full overflow-hidden'>
           <div
-            className='h-full bg-prime-gold rounded-full'
+            className='h-full bg-green-500 rounded-full'
             style={{ width: `${forPercentage}%` }}
           />
         </div>
 
         <div className='flex justify-between text-sm text-text-secondary mb-1'>
           <span>Against</span>
-          <span>{againstPercentage.toFixed(1)}%</span>
+          <span>{againstPercentage.toFixed(1)}% ({(proposal.votes.against / 1000000).toFixed(2)}M)</span>
         </div>
         <div className='h-2 bg-prime-black/50 rounded-full overflow-hidden'>
           <div
             className='h-full bg-red-500 rounded-full'
             style={{ width: `${againstPercentage}%` }}
+          />
+        </div>
+
+        <div className='flex justify-between text-sm text-text-secondary mb-1'>
+          <span>Abstain</span>
+          <span>{abstainPercentage.toFixed(1)}% ({(proposal.votes.abstain / 1000000).toFixed(2)}M)</span>
+        </div>
+        <div className='h-2 bg-prime-black/50 rounded-full overflow-hidden'>
+          <div
+            className='h-full bg-gray-500 rounded-full'
+            style={{ width: `${abstainPercentage}%` }}
           />
         </div>
       </div>
