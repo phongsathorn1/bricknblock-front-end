@@ -2,8 +2,30 @@
 
 import { RWAGrid } from '@/components/features/rwa/rwa-grid';
 import { mockRWAItems } from '@/lib/data/mock-data';
+import { useGraphQuery } from '@/lib/hooks/useGraphQL';
 import { RWACardProps } from '@/lib/types/rwa';
+import { useState } from 'react';
+import { GET_RWA_TOKENS } from '@/lib/graphql/queries';
 export default function ListedRWA() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const { data, loading, error } =
+    useGraphQuery<SubgraphResponse>(GET_RWA_TOKENS);
+
+  if (loading) {
+    return (
+      <div className='min-h-screen bg-prime-black flex items-center justify-center'>
+        <div className='text-prime-gold'>Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className='min-h-screen bg-prime-black flex items-center justify-center'>
+        <div className='text-red-500'>Error: {error.message}</div>
+      </div>
+    );
+  }
   return (
     <div className='min-h-screen bg-prime-black'>
       {/* Header Section */}
