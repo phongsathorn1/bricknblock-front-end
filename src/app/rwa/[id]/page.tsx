@@ -6,6 +6,8 @@ import { mockRWADetails } from '@/lib/data/mock-data';
 import { useGraphQuery } from '@/lib/hooks/useGraphQL';
 import { GET_RWA_TOKENS } from '@/lib/graphql/queries';
 import { RWADetailProps } from '@/lib/types/rwa';
+import { formatDistanceToNow, fromUnixTime } from 'date-fns';
+import { formatEther } from 'viem';
 
 const getRWADetail = (
   fundraising: any,
@@ -98,6 +100,8 @@ export default function RWADetail() {
     return <div>Property not found</div>;
   }
 
+  console.log(JSON.stringify(fundraising, null, 2));
+
   // Combine real and mock data with null check
   const rwaDetail = fundraising
     ? getRWADetail(fundraising, mockRWADetail)
@@ -106,13 +110,43 @@ export default function RWADetail() {
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error loading data</div>;
 
+  // Helper functions
+  const formatAmount = (amount: string) => {
+    return parseFloat(formatEther(BigInt(amount))).toLocaleString();
+  };
+
+  const formatDate = (timestamp: string) => {
+    const date = fromUnixTime(parseInt(timestamp));
+    return formatDistanceToNow(date, { addSuffix: true });
+  };
+
+  const getProgress = (raised: string, goal: string) => {
+    const raisedAmount = parseFloat(formatEther(BigInt(raised)));
+    const goalAmount = parseFloat(formatEther(BigInt(goal)));
+    return (raisedAmount / goalAmount) * 100;
+  };
+
+  // Sort investments by timestamp (most recent first)
+  const sortedInvestments = [...fundraising.investments].sort(
+    (a, b) => parseInt(b.timestamp) - parseInt(a.timestamp)
+  );
+
+  // Calculate total stats
+  const totalInvestors = new Set(fundraising.investments.map((i) => i.investor))
+    .size;
+  const averageInvestment =
+    fundraising.investments.length > 0
+      ? parseFloat(formatEther(BigInt(fundraising.totalRaised))) /
+        fundraising.investments.length
+      : 0;
+
   return (
     <div className='min-h-screen bg-prime-black'>
       <div className='max-w-7xl mx-auto px-8 py-12'>
         {/* Header Section */}
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12'>
-          {/* Image Section */}
-          <div className='relative h-[400px] rounded-lg overflow-hidden'>
+          {/* Image Section - Adjusted height to match content */}
+          <div className='relative h-[600px] lg:h-full rounded-lg overflow-hidden'>
             <Image
               src={rwaDetail.image}
               alt={rwaDetail.name}
@@ -122,9 +156,10 @@ export default function RWADetail() {
             />
           </div>
 
-          {/* Info Section */}
-          <div className='space-y-6'>
-            <div>
+          {/* Info Section - Added height control */}
+          <div className='flex flex-col h-[600px] lg:h-full'>
+            {/* Title Area */}
+            <div className='mb-6'>
               <h1 className='font-display text-4xl uppercase tracking-wider text-text-primary mb-2'>
                 {rwaDetail.name}
               </h1>
@@ -152,61 +187,102 @@ export default function RWADetail() {
               </p>
             </div>
 
-            {/* Investment Progress */}
-            <div className='p-6 bg-prime-gray border border-prime-gold/10 rounded-lg'>
-              <div className='flex justify-between mb-4'>
-                <span className='text-text-secondary'>Raised Amount</span>
-                <span className='text-prime-gold font-medium'>
-                  {rwaDetail.raisedAmount.toLocaleString()} {rwaDetail.currency}
-                </span>
+            {/* Investment Stats - Made scrollable if needed */}
+            <div className='flex-grow overflow-y-auto space-y-4 pr-2 custom-scrollbar'>
+              <div className='grid grid-cols-2 gap-4'>
+                <div className='p-4 bg-prime-gray border border-prime-gold/10 rounded-lg'>
+                  <span className='block text-text-secondary text-sm mb-1'>
+                    Total Raised
+                  </span>
+                  <span className='text-prime-gold text-xl font-medium'>
+                    {formatAmount(fundraising.totalRaised)} USDT
+                  </span>
+                  <span className='block text-text-secondary text-xs mt-1'>
+                    of {formatAmount(fundraising.goalAmount)} USDT
+                  </span>
+                </div>
+
+                <div className='p-4 bg-prime-gray border border-prime-gold/10 rounded-lg'>
+                  <span className='block text-text-secondary text-sm mb-1'>
+                    Total Investors
+                  </span>
+                  <span className='text-prime-gold text-xl font-medium'>
+                    {totalInvestors}
+                  </span>
+                  <span className='block text-text-secondary text-xs mt-1'>
+                    unique addresses
+                  </span>
+                </div>
+
+                <div className='p-4 bg-prime-gray border border-prime-gold/10 rounded-lg'>
+                  <span className='block text-text-secondary text-sm mb-1'>
+                    Average Investment
+                  </span>
+                  <span className='text-prime-gold text-xl font-medium'>
+                    {averageInvestment.toLocaleString()} USDT
+                  </span>
+                  <span className='block text-text-secondary text-xs mt-1'>
+                    per investor
+                  </span>
+                </div>
+
+                <div className='p-4 bg-prime-gray border border-prime-gold/10 rounded-lg'>
+                  <span className='block text-text-secondary text-sm mb-1'>
+                    Status
+                  </span>
+                  <span
+                    className={`inline-flex px-2 py-1 rounded-full text-xs
+                    ${
+                      fundraising.isCompleted
+                        ? 'bg-green-900/20 text-green-400'
+                        : 'bg-yellow-900/20 text-yellow-400'
+                    }`}
+                  >
+                    {fundraising.isCompleted ? 'Completed' : 'Active'}
+                  </span>
+                  <span className='block text-text-secondary text-xs mt-1'>
+                    {formatDate(fundraising.deadline)} left
+                  </span>
+                </div>
               </div>
-              <div className='h-2 bg-prime-black/50 rounded-full overflow-hidden mb-4'>
-                <div
-                  className='h-full bg-gradient-to-r from-prime-gold to-prime-gold/80 rounded-full'
-                  style={{
-                    width: `${
-                      (rwaDetail.raisedAmount / rwaDetail.targetAmount) * 100
-                    }%`,
-                  }}
-                />
-              </div>
-              <div className='flex justify-between text-sm'>
-                <span className='text-text-secondary'>Target</span>
-                <span className='text-text-primary'>
-                  {rwaDetail.targetAmount.toLocaleString()} {rwaDetail.currency}
-                </span>
+
+              {/* Progress Bar */}
+              <div className='p-4 bg-prime-gray border border-prime-gold/10 rounded-lg'>
+                <div className='flex justify-between mb-2'>
+                  <span className='text-text-secondary text-sm'>Progress</span>
+                  <span className='text-prime-gold text-sm'>
+                    {getProgress(
+                      fundraising.totalRaised,
+                      fundraising.goalAmount
+                    ).toFixed(1)}
+                    %
+                  </span>
+                </div>
+                <div className='h-2 bg-prime-black/50 rounded-full overflow-hidden'>
+                  <div
+                    className='h-full bg-gradient-to-r from-prime-gold to-prime-gold/80 rounded-full'
+                    style={{
+                      width: `${getProgress(
+                        fundraising.totalRaised,
+                        fundraising.goalAmount
+                      )}%`,
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Investment Details */}
-            <div className='grid grid-cols-2 gap-4'>
-              <div className='p-4 bg-prime-gray border border-prime-gold/10 rounded-lg'>
-                <span className='block text-text-secondary text-sm mb-1'>
-                  Price per Share
-                </span>
-                <span className='text-prime-gold text-xl font-medium'>
-                  {rwaDetail.investment.minInvestment} {rwaDetail.currency}
-                </span>
-              </div>
-              <div className='p-4 bg-prime-gray border border-prime-gold/10 rounded-lg'>
-                <span className='block text-text-secondary text-sm mb-1'>
-                  Expected Return
-                </span>
-                <span className='text-prime-gold text-xl font-medium'>
-                  {rwaDetail.investment.expectedReturn}
-                </span>
-              </div>
+            {/* Action Button - Fixed at bottom */}
+            <div className='mt-6'>
+              <button
+                className='w-full px-8 py-4 bg-gradient-to-r from-prime-gold to-prime-gold/80
+                         text-prime-black font-medium rounded
+                         hover:from-prime-gold/90 hover:to-prime-gold/70
+                         transition-all duration-300 uppercase tracking-wider'
+              >
+                Invest Now
+              </button>
             </div>
-
-            {/* Action Button */}
-            <button
-              className='w-full px-8 py-4 bg-gradient-to-r from-prime-gold to-prime-gold/80
-                             text-prime-black font-medium rounded
-                             hover:from-prime-gold/90 hover:to-prime-gold/70
-                             transition-all duration-300 uppercase tracking-wider'
-            >
-              Invest Now
-            </button>
           </div>
         </div>
 
@@ -301,6 +377,120 @@ export default function RWADetail() {
           <p className='text-text-secondary leading-relaxed'>
             {rwaDetail.description}
           </p>
+        </div>
+        <hr className='my-4 border-t border-prime-gray/10' />
+        {/* Investment History */}
+        <div className='space-y-6'>
+          <div className='flex justify-between items-center'>
+            <h2 className='font-display text-xl uppercase tracking-wider text-text-primary'>
+              Investment History
+            </h2>
+            <span className='text-text-secondary'>
+              {fundraising.investments.length} transactions
+            </span>
+          </div>
+
+          <div className='overflow-x-auto rounded-lg border border-prime-gold/10'>
+            <table className='w-full'>
+              <thead className='bg-prime-gray'>
+                <tr>
+                  <th className='px-6 py-4 text-left text-sm text-text-secondary font-medium uppercase tracking-wider'>
+                    Investor
+                  </th>
+                  <th className='px-6 py-4 text-left text-sm text-text-secondary font-medium uppercase tracking-wider'>
+                    Amount
+                  </th>
+                  <th className='px-6 py-4 text-left text-sm text-text-secondary font-medium uppercase tracking-wider'>
+                    Time
+                  </th>
+                  <th className='px-6 py-4 text-left text-sm text-text-secondary font-medium uppercase tracking-wider'>
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className='divide-y divide-prime-gold/10 bg-prime-black/30'>
+                {sortedInvestments.map((investment) => (
+                  <tr
+                    key={investment.id}
+                    className='hover:bg-prime-gray/50 transition-colors duration-200'
+                  >
+                    <td className='px-6 py-4 whitespace-nowrap'>
+                      <div className='flex items-center'>
+                        <div className='h-8 w-8 rounded-full bg-prime-gold/10 flex items-center justify-center mr-3'>
+                          <svg
+                            className='h-4 w-4 text-prime-gold'
+                            fill='none'
+                            stroke='currentColor'
+                            viewBox='0 0 24 24'
+                          >
+                            <path
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                              strokeWidth='2'
+                              d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'
+                            />
+                          </svg>
+                        </div>
+                        <div>
+                          <div className='text-text-primary'>
+                            {investment.investor.slice(0, 6)}...
+                            {investment.investor.slice(-4)}
+                          </div>
+                          <div className='text-xs text-text-secondary'>
+                            {investment.investor === fundraising.owner
+                              ? 'Owner'
+                              : 'Investor'}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className='px-6 py-4 whitespace-nowrap'>
+                      <div className='text-prime-gold font-medium'>
+                        {formatAmount(investment.amount)} USDT
+                      </div>
+                      <div className='text-xs text-text-secondary'>
+                        {(
+                          (parseFloat(formatEther(BigInt(investment.amount))) /
+                            parseFloat(
+                              formatEther(BigInt(fundraising.goalAmount))
+                            )) *
+                          100
+                        ).toFixed(1)}
+                        % of goal
+                      </div>
+                    </td>
+                    <td className='px-6 py-4 whitespace-nowrap'>
+                      <div className='text-text-primary'>
+                        {formatDate(investment.timestamp)}
+                      </div>
+                      <div className='text-xs text-text-secondary'>
+                        {new Date(
+                          parseInt(investment.timestamp) * 1000
+                        ).toLocaleDateString()}
+                      </div>
+                    </td>
+                    <td className='px-6 py-4 whitespace-nowrap'>
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm ${
+                          investment.claimed
+                            ? 'bg-green-900/20 text-green-400'
+                            : 'bg-yellow-900/20 text-yellow-400'
+                        }`}
+                      >
+                        {investment.claimed ? 'Claimed' : 'Pending'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {fundraising.investments.length === 0 && (
+              <div className='text-center py-12 text-text-secondary'>
+                No investments have been made yet.
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
