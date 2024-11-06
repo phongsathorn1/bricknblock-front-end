@@ -6,7 +6,7 @@ let graphClient: ApolloClient<any> | null = null;
 export const getGraphClient = () => {
   if (!graphClient) {
     graphClient = new ApolloClient({
-      uri: 'https://api.studio.thegraph.com/query/54090/ethay/version/latest',
+      uri: 'https://api.studio.thegraph.com/query/54090/bnb-hack/version/latest',
       cache: new InMemoryCache(),
       defaultOptions: {
         watchQuery: {

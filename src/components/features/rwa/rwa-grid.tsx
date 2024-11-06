@@ -1,4 +1,5 @@
 import { RWACard } from './rwa-card';
+import { RWACardProps } from '@/lib/types/rwa';
 
 export function RWAGrid({ items }: { items: RWACardProps[] }) {
   return (

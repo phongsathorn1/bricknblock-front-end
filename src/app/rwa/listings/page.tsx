@@ -26,6 +26,30 @@ export default function ListedRWA() {
       </div>
     );
   }
+  const rwaItems: RWACardProps[] =
+    data?.fundraisings?.map((fundraising: any) => {
+      // Find matching mock item for fallback data
+      const mockItem =
+        mockRWAItems[Math.floor(Math.random() * mockRWAItems.length)];
+
+      // Helper function to convert from wei (18 decimals)
+      const fromWei = (value: string | null | undefined) => {
+        if (!value) return 0;
+        return parseFloat(value) / Math.pow(10, 18);
+      };
+
+      return {
+        id: fundraising.id,
+        name: fundraising.propertyToken?.name || mockItem.name,
+        location: mockItem.location, // Always use mock location since it's not in GQL
+        raisedAmount: fromWei(fundraising.totalRaised),
+        targetAmount: fromWei(fundraising.goalAmount),
+        price: fromWei(fundraising.minInvestment).toString() || mockItem.price,
+        currency: 'USDT',
+        image: mockItem.image, // Always use mock image since it's not in GQL
+      };
+    }) || mockRWAItems; // Fallback to complete mockRWAItems if
+
   return (
     <div className='min-h-screen bg-prime-black'>
       {/* Header Section */}
@@ -64,7 +88,7 @@ export default function ListedRWA() {
         </div>
 
         {/* RWA Grid */}
-        <RWAGrid items={mockRWAItems} />
+        <RWAGrid items={rwaItems} />
       </div>
     </div>
   );

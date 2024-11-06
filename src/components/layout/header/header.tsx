@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import logo from '@/assets/icons/pascalwifhat.png';
+import { useWallet } from '@/context/wallet-context';
 
 // Navigation types
 interface NavItem {
@@ -34,6 +35,8 @@ const navigation: NavGroup[] = [
 ];
 
 export const Header = () => {
+  const { address, isConnected, handleConnect } = useWallet();
+
   return (
     <header className='sticky top-0 z-50 bg-prime-black/90 backdrop-blur-sm border-b border-prime-gold/10'>
       <div className='flex items-center justify-between px-8 py-4'>
@@ -106,14 +109,17 @@ export const Header = () => {
           </div>
         </div>
 
-        {/* Connect Wallet */}
+        {/* Connect Wallet Button */}
         <button
+          onClick={handleConnect}
           className='px-6 py-2.5 bg-prime-gray border border-prime-gold/20
                          hover:border-prime-gold/40 text-text-primary rounded
                          transition-all duration-300 font-body text-sm uppercase
                          tracking-wider hover:bg-prime-gold/5'
         >
-          Connect Wallet
+          {isConnected
+            ? `${address?.slice(0, 6)}...${address?.slice(-4)}`
+            : 'Connect Wallet'}
         </button>
       </div>
     </header>

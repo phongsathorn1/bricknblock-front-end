@@ -3,6 +3,9 @@ import localFont from 'next/font/local';
 import { Layout } from '@/components/layout/layout'; // Add this import
 import './globals.css';
 import { Space_Grotesk } from 'next/font/google';
+import { config } from '@/lib/wagmi';
+import { WagmiConfig, WagmiProvider } from 'wagmi';
+import { Providers } from '@/components/providers/wagmi-provider';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -51,7 +54,9 @@ export default function RootLayout({
       <body
         className={`${druk.variable} ${spaceGrotesk.variable} font-body bg-prime-black text-text-primary`}
       >
-        <Layout>{children}</Layout>
+        <Providers>
+          <Layout>{children}</Layout>
+        </Providers>
       </body>
     </html>
   );

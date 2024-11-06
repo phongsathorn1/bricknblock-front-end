@@ -2,7 +2,7 @@ import { RWACardProps, RWADetailProps } from '../types/rwa';
 
 export const mockRWAItems: RWACardProps[] = [
   {
-    id: '1',
+    id: '0x79fed642ef71eefc6493798612d31c4e9f2ac55d',
     name: 'Luxury Villa Ubud',
     location: 'Bali, Indonesia',
     raisedAmount: 750000,
@@ -92,7 +92,7 @@ export const mockRWAItems: RWACardProps[] = [
 ];
 
 export const mockRWADetails: Record<string, RWADetailProps> = {
-  '1': {
+  '0x79fed642ef71eefc6493798612d31c4e9f2ac55d': {
     ...mockRWAItems[0],
     description:
       'Nestled in the heart of Ubud, this luxury villa offers the perfect blend of traditional Balinese architecture and modern comfort. The property features 5 bedrooms, a private pool, and stunning rice field views.',

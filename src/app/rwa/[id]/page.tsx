@@ -3,11 +3,108 @@
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { mockRWADetails } from '@/lib/data/mock-data';
+import { useGraphQuery } from '@/lib/hooks/useGraphQL';
+import { GET_RWA_TOKENS } from '@/lib/graphql/queries';
+import { RWADetailProps } from '@/lib/types/rwa';
+
+const getRWADetail = (
+  fundraising: any,
+  mockDetail: RWADetailProps
+): RWADetailProps => {
+  // Helper function to convert from wei (18 decimals)
+  const fromWei = (value: string | null | undefined) => {
+    if (!value) return 0;
+    return parseFloat(value) / Math.pow(10, 18);
+  };
+
+  // Early return if either fundraising or mockDetail is undefined
+  if (!fundraising || !mockDetail) {
+    return mockDetail || ({} as RWADetailProps);
+  }
+
+  try {
+    return {
+      // Basic info from RWACardProps
+      id: fundraising.id || mockDetail.id,
+      name: fundraising.propertyToken?.name || mockDetail.name,
+      location: mockDetail.location,
+      raisedAmount: fromWei(fundraising.totalRaised),
+      targetAmount: fromWei(fundraising.goalAmount),
+      price: fromWei(fundraising.minInvestment).toString() || mockDetail.price,
+      currency: 'USDT',
+      image: mockDetail.image,
+
+      // Additional RWADetailProps fields
+      description: mockDetail.description,
+      amenities: mockDetail.amenities || [],
+      details: {
+        size: mockDetail.details?.size || '',
+        built: mockDetail.details?.built || '',
+        type: mockDetail.details?.type || '',
+        status: fundraising.isCompleted ? 'Completed' : 'Ready for Investment',
+        bedrooms: mockDetail.details?.bedrooms || '',
+        bathrooms: mockDetail.details?.bathrooms || '',
+        parking: mockDetail.details?.parking || '',
+      },
+      documents: [
+        { name: 'Property Token Contract', verified: true },
+        { name: 'Fundraising Contract', verified: true },
+        ...(mockDetail.documents?.slice(2) || []),
+      ],
+      investment: {
+        minInvestment: fromWei(fundraising.minInvestment).toString(),
+        expectedReturn: mockDetail.investment?.expectedReturn || '0%',
+        investmentPeriod: fundraising.deadline
+          ? `${Math.floor(
+              (parseInt(fundraising.deadline) - Date.now() / 1000) /
+                (24 * 60 * 60)
+            )} days`
+          : mockDetail.investment?.investmentPeriod || '0 days',
+        totalShares:
+          fundraising.propertyToken?.totalSupply ||
+          mockDetail.investment?.totalShares ||
+          '0',
+        availableShares: (() => {
+          try {
+            return (
+              parseInt(fundraising.propertyToken?.totalSupply || '0') -
+              parseFloat(fundraising.totalRaised || '0')
+            ).toString();
+          } catch {
+            return mockDetail.investment?.availableShares || '0';
+          }
+        })(),
+      },
+    };
+  } catch (error) {
+    console.error('Error mapping RWA detail:', error);
+    return mockDetail;
+  }
+};
 
 export default function RWADetail() {
   const params = useParams();
   const { id } = params;
+
+  const { data, loading, error } =
+    useGraphQuery<SubgraphResponse>(GET_RWA_TOKENS);
+
+  // Find the specific fundraising and corresponding mock data
+  const fundraising = data?.fundraisings?.find((f) => f.id === id);
   const mockRWADetail = mockRWADetails[id as string];
+
+  // Add null checks here
+  if (!mockRWADetail) {
+    return <div>Property not found</div>;
+  }
+
+  // Combine real and mock data with null check
+  const rwaDetail = fundraising
+    ? getRWADetail(fundraising, mockRWADetail)
+    : mockRWADetail;
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error loading data</div>;
 
   return (
     <div className='min-h-screen bg-prime-black'>
@@ -17,8 +114,8 @@ export default function RWADetail() {
           {/* Image Section */}
           <div className='relative h-[400px] rounded-lg overflow-hidden'>
             <Image
-              src={mockRWADetail.image}
-              alt={mockRWADetail.name}
+              src={rwaDetail.image}
+              alt={rwaDetail.name}
               fill
               className='object-cover'
               priority
@@ -29,7 +126,7 @@ export default function RWADetail() {
           <div className='space-y-6'>
             <div>
               <h1 className='font-display text-4xl uppercase tracking-wider text-text-primary mb-2'>
-                {mockRWADetail.name}
+                {rwaDetail.name}
               </h1>
               <p className='text-text-secondary flex items-center gap-2'>
                 <svg
@@ -51,7 +148,7 @@ export default function RWADetail() {
                     d='M15 11a3 3 0 11-6 0 3 3 0 016 0z'
                   />
                 </svg>
-                {mockRWADetail.location}
+                {rwaDetail.location}
               </p>
             </div>
 
@@ -60,8 +157,7 @@ export default function RWADetail() {
               <div className='flex justify-between mb-4'>
                 <span className='text-text-secondary'>Raised Amount</span>
                 <span className='text-prime-gold font-medium'>
-                  {mockRWADetail.raisedAmount.toLocaleString()}{' '}
-                  {mockRWADetail.currency}
+                  {rwaDetail.raisedAmount.toLocaleString()} {rwaDetail.currency}
                 </span>
               </div>
               <div className='h-2 bg-prime-black/50 rounded-full overflow-hidden mb-4'>
@@ -69,9 +165,7 @@ export default function RWADetail() {
                   className='h-full bg-gradient-to-r from-prime-gold to-prime-gold/80 rounded-full'
                   style={{
                     width: `${
-                      (mockRWADetail.raisedAmount /
-                        mockRWADetail.targetAmount) *
-                      100
+                      (rwaDetail.raisedAmount / rwaDetail.targetAmount) * 100
                     }%`,
                   }}
                 />
@@ -79,8 +173,7 @@ export default function RWADetail() {
               <div className='flex justify-between text-sm'>
                 <span className='text-text-secondary'>Target</span>
                 <span className='text-text-primary'>
-                  {mockRWADetail.targetAmount.toLocaleString()}{' '}
-                  {mockRWADetail.currency}
+                  {rwaDetail.targetAmount.toLocaleString()} {rwaDetail.currency}
                 </span>
               </div>
             </div>
@@ -92,8 +185,7 @@ export default function RWADetail() {
                   Price per Share
                 </span>
                 <span className='text-prime-gold text-xl font-medium'>
-                  {mockRWADetail.investment.minInvestment}{' '}
-                  {mockRWADetail.currency}
+                  {rwaDetail.investment.minInvestment} {rwaDetail.currency}
                 </span>
               </div>
               <div className='p-4 bg-prime-gray border border-prime-gold/10 rounded-lg'>
@@ -101,7 +193,7 @@ export default function RWADetail() {
                   Expected Return
                 </span>
                 <span className='text-prime-gold text-xl font-medium'>
-                  {mockRWADetail.investment.expectedReturn}
+                  {rwaDetail.investment.expectedReturn}
                 </span>
               </div>
             </div>
@@ -126,7 +218,7 @@ export default function RWADetail() {
               Property Details
             </h2>
             <div className='space-y-4'>
-              {Object.entries(mockRWADetail.details).map(([key, value]) => (
+              {Object.entries(rwaDetail.details).map(([key, value]) => (
                 <div
                   key={key}
                   className='flex justify-between py-2 border-b border-prime-gold/10'
@@ -144,7 +236,7 @@ export default function RWADetail() {
               Amenities
             </h2>
             <div className='grid grid-cols-2 gap-4'>
-              {mockRWADetail.amenities.map((amenity) => (
+              {rwaDetail.amenities.map((amenity) => (
                 <div
                   key={amenity}
                   className='flex items-center gap-2 text-text-secondary'
@@ -174,7 +266,7 @@ export default function RWADetail() {
               Verified Documents
             </h2>
             <div className='space-y-4'>
-              {mockRWADetail.documents.map((doc) => (
+              {rwaDetail.documents.map((doc) => (
                 <div
                   key={doc.name}
                   className='flex items-center justify-between p-4 bg-prime-gray border border-prime-gold/10 rounded-lg'
@@ -207,7 +299,7 @@ export default function RWADetail() {
             Description
           </h2>
           <p className='text-text-secondary leading-relaxed'>
-            {mockRWADetail.description}
+            {rwaDetail.description}
           </p>
         </div>
       </div>

@@ -1,16 +1,33 @@
 import { gql } from '@apollo/client';
 
 export const GET_RWA_TOKENS = gql`
-  query GetRWAs {
-    rwas(first: 100) {
+  query {
+    fundraisings(first: 100) {
       id
-      name
-      location
-      raisedAmount
-      targetAmount
-      price
-      currency
-      image
+      address
+      nftId
+      owner
+      goalAmount
+      minInvestment
+      maxInvestment
+      deadline
+      totalRaised
+      isCompleted
+      investments {
+        id
+        investor
+        amount
+        claimed
+        timestamp
+      }
+      propertyToken {
+        id
+        address
+        name
+        symbol
+        totalSupply
+      }
+      createdAt
     }
   }
 `;
