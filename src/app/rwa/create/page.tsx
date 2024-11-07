@@ -100,15 +100,12 @@ export default function CreateRWA() {
 
       // Parse back to object and convert 'nonce' to a number
       const txParsed = JSON.parse(txJSON);
-      txParsed.nonce = Number(txParsed.nonce);
-
-      console.log('Nonce as a number:', txParsed.nonce); // Now you can access nonce as a number
-
-      console.log(txParsed);
-      console.log(nftId);
-      const nftIdnew = (Number(txParsed.nonce) - 2).toString();
+      console.log('txParsed', txParsed);
+      console.log('nftId', nftId);
+      const nftIdnew = txParsed.logs[0].topics[3];
+      console.log('nftIdnew', nftIdnew);
       setNftId(nftIdnew);
-      console.log(nftIdnew);
+      console.log('nftIdnew', nftIdnew);
       setCurrentStep(1);
 
       // if (txJSON) {
@@ -212,20 +209,6 @@ export default function CreateRWA() {
 
       console.log('Mint transaction sent:', mintResult);
       alert('Mint transaction sent! Please confirm in MetaMask.');
-
-      // Set the hash for useWaitForTransactionReceipt
-      if (mintResult && mintResult.hash) {
-        const { data: receipt } = await useWaitForTransactionReceipt({
-          hash: mintResult.hash,
-        });
-
-        // Extract the NFT ID from the receipt or event logs
-        const nftId = receipt?.logs?.find((log) => log.event === 'Transfer')
-          ?.args?.tokenId;
-        setNftId(nftId?.toString() || null);
-
-        setCurrentStep(1);
-      }
     } catch (error) {
       console.error('Error during minting:', error);
       alert('Error during minting. Check console for details.');

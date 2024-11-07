@@ -7,28 +7,13 @@ import { useGraphQuery } from '@/lib/hooks/useGraphQL';
 import { GET_RWA_BY_ID, GET_RWA_TOKENS } from '@/lib/graphql/queries';
 import { RWADetailProps } from '@/lib/types/rwa';
 import { formatDistanceToNow, fromUnixTime } from 'date-fns';
-import { formatEther, parseEther } from 'viem';
+import { formatEther, parseEther, parseUnits } from 'viem';
 import { useState } from 'react';
-import { useAccount, useWriteContract } from 'wagmi';
-
-// Add these to your existing contract ABI
-const CONTRACT_ABI = [
-  // ... existing ABI items ...
-  {
-    inputs: [{ name: 'investmentId', type: 'uint256' }],
-    name: 'withdrawInvestment',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  {
-    inputs: [{ name: 'investmentId', type: 'uint256' }],
-    name: 'claimTokens',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-] as const;
+import { useAccount, useConnect, useWriteContract } from 'wagmi';
+import { FUNDRAISING_ABI, REAL_ESTATE_FUNDRAISING_ABI } from '@/constants/abi';
+import { CONTRACT_ADDRESSES } from '@/constants/contracts';
+import { injected } from 'wagmi/connectors';
+import { ethers } from 'ethers';
 
 const getRWADetail = (
   fundraising: any,
@@ -48,7 +33,7 @@ const getRWADetail = (
   try {
     return {
       // Basic info from RWACardProps
-      id: fundraising.id || mockDetail.id,
+      id: fundraising.id,
       name: fundraising.propertyToken?.name || mockDetail.name,
       location: mockDetail.location,
       raisedAmount: fromWei(fundraising.totalRaised),
@@ -106,7 +91,9 @@ const getRWADetail = (
 };
 
 export default function RWADetail() {
+  const [isContractWriting, setIsContractWriting] = useState(false);
   const params = useParams();
+  const { connect } = useConnect();
   const { id } = params;
   const { data, loading, error } = useGraphQuery<SubgraphResponse>(
     GET_RWA_BY_ID(id as string)
@@ -115,21 +102,25 @@ export default function RWADetail() {
   const [showAmenities, setShowAmenities] = useState(true);
   const [showInvestModal, setShowInvestModal] = useState(false);
   const [investAmount, setInvestAmount] = useState('');
-  const { address } = useAccount();
-  const { writeContract, isLoading: isContractWriting } = useWriteContract();
+  const { data: hash, errors, isPending, writeContract } = useWriteContract();
+  const { address, isConnected } = useAccount();
 
-  const mockRWADetail = mockRWADetails[id as string];
+  // Ensure hooks are not conditionally called
+  const mockRWADetail = mockRWADetails['1'];
   const fundraising = data?.fundraisings?.find((f) => f.id === id);
 
-  const handleWithdraw = async (investmentId: number) => {
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+
+  const handleWithdraw = async () => {
     try {
-      const { hash } = await writeContract({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        functionName: 'withdrawInvestment',
-        args: [BigInt(investmentId)],
+      const withdrawResult = await writeContract({
+        address: fundraising.address as `0x${string}`,
+        abi: REAL_ESTATE_FUNDRAISING_ABI,
+        functionName: 'withdrawPartial',
+        args: [parseEther(withdrawAmount)], // Use the withdrawal amount from state
       });
-      console.log('Withdrawal transaction:', hash);
+      console.log('Withdrawal transaction:', withdrawResult);
       // Add success notification here
     } catch (error) {
       console.error('Withdrawal error:', error);
@@ -153,19 +144,94 @@ export default function RWADetail() {
     }
   };
 
+  const handleInvest = async () => {
+    if (!isConnected) {
+      console.log('Wallet not connected. Attempting to connect...');
+      connect({ connector: injected() });
+      return;
+    }
+
+    if (!fundraising || !fundraising.address) {
+      console.error('Fundraising data or address is missing.');
+      return;
+    }
+
+    try {
+      console.log('Approving USDT to contract...');
+      const approveResult = await writeContract({
+        address: CONTRACT_ADDRESSES.USDT as `0x${string}`, // Replace with actual USDT contract address
+        abi: [
+          // ERC20 ABI for approve function
+          {
+            constant: false,
+            inputs: [
+              { name: '_spender', type: 'address' },
+              { name: '_value', type: 'uint256' },
+            ],
+            name: 'approve',
+            outputs: [{ name: '', type: 'bool' }],
+            type: 'function',
+          },
+        ],
+        functionName: 'approve',
+        args: [fundraising.address, fundraising.minInvestment], // Approve the minInvestment amount
+      });
+
+      console.log('USDT approved:', approveResult);
+      console.log(
+        'Attempting to send invest transaction...',
+        fundraising.minInvestment,
+        fundraising.address
+      );
+
+      const investResult = await writeContract({
+        address: fundraising.address as `0x${string}`,
+        abi: REAL_ESTATE_FUNDRAISING_ABI,
+        functionName: 'invest',
+        args: [parseEther(investAmount)], // Convert investment amount to wei
+      });
+
+      console.log('Invest transaction sent:', investResult);
+      alert('Invest transaction sent! Please confirm in MetaMask.');
+    } catch (error) {
+      console.error('Error during investment:', error);
+      alert('Error during investment. Check console for details.');
+    }
+  };
+  const validateInvestment = (amount: string) => {
+    try {
+      const value = parseEther(amount);
+      const min = BigInt(fundraising.minInvestment);
+      const max = BigInt(fundraising.maxInvestment);
+      const remaining = getRemainingAmount();
+
+      return {
+        isValid: value >= min && value <= max && value <= remaining,
+        error:
+          value < min
+            ? 'Amount below minimum'
+            : value > max
+            ? 'Amount above maximum'
+            : value > remaining
+            ? 'Amount exceeds remaining'
+            : '',
+      };
+    } catch {
+      return { isValid: false, error: 'Invalid amount' };
+    }
+  };
+
   if (!mockRWADetail) {
     return <div>Property not found</div>;
   }
 
-  console.log(JSON.stringify(fundraising, null, 2));
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error loading data</div>;
 
   // Combine real and mock data with null check
   const rwaDetail = fundraising
     ? getRWADetail(fundraising, mockRWADetail)
     : mockRWADetail;
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error loading data</div>;
 
   // Helper functions
   const formatAmount = (amount: string) => {
@@ -201,29 +267,6 @@ export default function RWADetail() {
     const raised = BigInt(fundraising.totalRaised);
     const goal = BigInt(fundraising.goalAmount);
     return goal - raised;
-  };
-
-  const validateInvestment = (amount: string) => {
-    try {
-      const value = parseEther(amount);
-      const min = BigInt(fundraising.minInvestment);
-      const max = BigInt(fundraising.maxInvestment);
-      const remaining = getRemainingAmount();
-
-      return {
-        isValid: value >= min && value <= max && value <= remaining,
-        error:
-          value < min
-            ? 'Amount below minimum'
-            : value > max
-            ? 'Amount above maximum'
-            : value > remaining
-            ? 'Amount exceeds remaining'
-            : '',
-      };
-    } catch {
-      return { isValid: false, error: 'Invalid amount' };
-    }
   };
 
   return (
@@ -490,9 +533,7 @@ export default function RWADetail() {
                             {!investment.claimed &&
                               !fundraising.isCompleted && (
                                 <button
-                                  onClick={() =>
-                                    handleWithdraw(parseInt(investment.id))
-                                  }
+                                  onClick={() => setShowWithdrawModal(true)}
                                   disabled={isContractWriting}
                                   className='px-3 py-1 bg-red-500/20 text-red-400 rounded-full 
                                          hover:bg-red-500/30 transition-colors duration-300 text-sm 
@@ -769,6 +810,7 @@ export default function RWADetail() {
               disabled={
                 !investAmount || !validateInvestment(investAmount).isValid
               }
+              onClick={handleInvest}
               className={`w-full px-6 py-3 rounded mt-6
                 ${
                   !investAmount || !validateInvestment(investAmount).isValid
@@ -779,6 +821,75 @@ export default function RWADetail() {
                 transition-all duration-300`}
             >
               Confirm Investment
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Withdraw Modal */}
+      {showWithdrawModal && (
+        <div className='fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50'>
+          <div className='bg-prime-gray rounded-lg p-6 max-w-md w-full max-h-[90vh] flex flex-col'>
+            <div className='flex justify-between items-center mb-6'>
+              <h3 className='text-xl font-display uppercase tracking-wider text-text-primary'>
+                Withdraw Amount
+              </h3>
+              <button
+                onClick={() => setShowWithdrawModal(false)}
+                className='text-text-secondary hover:text-text-primary'
+              >
+                <svg
+                  className='w-6 h-6'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth='2'
+                    d='M6 18L18 6M6 6l12 12'
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div className='space-y-4 overflow-y-auto custom-scrollbar flex-grow pr-2'>
+              <div className='w-full'>
+                <div className='relative w-full'>
+                  <input
+                    type='number'
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                    placeholder='Enter amount'
+                    className='w-full px-4 py-3 bg-prime-black border border-prime-gold/10 rounded
+                             text-text-primary placeholder-text-secondary/50 focus:outline-none
+                             focus:border-prime-gold/30 box-border
+                             [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
+                  />
+                  <span className='absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary'>
+                    USDT
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              disabled={!withdrawAmount}
+              onClick={() => {
+                handleWithdraw();
+                setShowWithdrawModal(false);
+              }}
+              className={`w-full px-6 py-3 rounded mt-6
+                ${
+                  !withdrawAmount
+                    ? 'bg-gray-500 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-prime-gold to-prime-gold/80 hover:from-prime-gold/90 hover:to-prime-gold/70'
+                }
+                text-prime-black font-medium uppercase tracking-wider
+                transition-all duration-300`}
+            >
+              Confirm Withdrawal
             </button>
           </div>
         </div>

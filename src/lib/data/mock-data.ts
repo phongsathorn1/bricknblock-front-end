@@ -13,7 +13,7 @@ export const mockRWAItems: RWACardProps[] = [
       'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop&q=60',
   },
   {
-    id: '2',
+    id: '0xef14d72d44f230781513e2cecdfe2c33014cb238',
     name: 'Beachfront Resort',
     location: 'Phuket, Thailand',
     raisedAmount: 450000,
@@ -92,7 +92,7 @@ export const mockRWAItems: RWACardProps[] = [
 ];
 
 export const mockRWADetails: Record<string, RWADetailProps> = {
-  '0xfd2111813d971fb117c8cf11b1a30af6c937da5c': {
+  '1': {
     ...mockRWAItems[0],
     description:
       'Nestled in the heart of Ubud, this luxury villa offers the perfect blend of traditional Balinese architecture and modern comfort. The property features 5 bedrooms, a private pool, and stunning rice field views.',

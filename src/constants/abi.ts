@@ -265,3 +265,28 @@ export const FUNDRAISING_ABI = [
     type: 'event',
   },
 ];
+
+export const REAL_ESTATE_FUNDRAISING_ABI = [
+  {
+    inputs: [{ name: 'amount', type: 'uint256' }],
+    name: 'invest',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'amount', type: 'uint256' }],
+    name: 'withdrawPartial',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'claimTokens',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  // ... other functions ...
+];
