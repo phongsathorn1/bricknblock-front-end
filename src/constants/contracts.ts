@@ -1,46 +1,8 @@
-// Contract addresses - replace with your deployed contract addresses
-export const FACTORY_ADDRESS = '0x....' as `0x${string}`; // Replace with your actual factory contract address
-
-// Factory ABI - this should match your deployed contract
-export const FACTORY_ABI = [
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'nftId',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'goalAmount',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'minInvestment',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'maxInvestment',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'durationDays',
-        type: 'uint256',
-      },
-    ],
-    name: 'createFundraising',
-    outputs: [
-      {
-        internalType: 'address',
-        name: '',
-        type: 'address',
-      },
-    ],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-  // ... add other contract functions here
-] as const;
+export const CONTRACT_ADDRESSES = {
+  USDT: '0x776Ded774F25A3f353763aC174A4F4C11a6deC39',
+  NFT: '0x5061213ed078Eba29fF1C6da64e7b66A1F499E2f',
+  FactoryFundraising: '0x5fDa9977D813e2C2b56A7FB996b0b1943ddeb365',
+  PropertyGovernance: '0x197cF98961B77B2f580DD5fCCb9C7B38B5d685b3',
+  FactoryFundraisingDao: '0xaB90644BC8759Ad29B41724dEE76faece99B4a33',
+  FactoryToken: '0x42F0c3F4372dc34B31557F13529c75d8175acCC1',
+};

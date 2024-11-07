@@ -1,35 +1,40 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import Image from 'next/image';
-import { useAccount, useConnect, useWriteContract } from 'wagmi';
+import {
+  useAccount,
+  useConnect,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  type BaseError,
+  useTransaction,
+  useReadContracts,
+} from 'wagmi';
 import { parseEther } from 'viem';
 import { injected } from 'wagmi/connectors';
 import axios from 'axios';
+import { NFT_ABI } from '@/constants/abi';
+import { FUNDRAISING_ABI } from '@/constants/abi';
+import { CONTRACT_ADDRESSES } from '@/constants/contracts';
+import { ethers } from 'ethers';
+
 // Replace with your actual contract address and ABI
-const FACTORY_ADDRESS = '0x...' as `0x${string}`;
-const FACTORY_ABI = [
-  {
-    inputs: [
-      { name: 'nftId', type: 'uint256' },
-      { name: 'goalAmount', type: 'uint256' },
-      { name: 'minInvestment', type: 'uint256' },
-      { name: 'maxInvestment', type: 'uint256' },
-      { name: 'durationDays', type: 'uint256' },
-    ],
-    name: 'createFundraising',
-    outputs: [{ name: '', type: 'address' }],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-] as const;
 
 export default function CreateRWA() {
   const { address, isConnected } = useAccount();
   const { connect } = useConnect();
-  const { writeContract, isLoading: isContractWriting } = useWriteContract();
 
-  const [isLoading, setIsLoading] = useState(false);
+  // Contract interactions using the new useWriteContract hook
+  const { data: hash, error, isPending, writeContract } = useWriteContract();
+
+  // Watch for transaction receipt
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+    });
+
+  // const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     propertyName: '',
@@ -38,7 +43,102 @@ export default function CreateRWA() {
     targetAmount: '',
     currency: 'USDT',
     description: '',
+    area: '',
+    propertyType: '',
+    documents: '',
   });
+
+  const [currentStep, setCurrentStep] = useState(0);
+  const [nftId, setNftId] = useState<string | null>(null);
+
+  const [transactionHash, setTransactionHash] = useState<string | null>(null);
+
+  // Call the useTransaction hook at the top level
+  const { data: txDetails, error: txError } = useTransaction({
+    hash: transactionHash,
+  });
+
+  const { data, isError, isLoading } = useReadContracts({
+    contracts: [
+      {
+        address: CONTRACT_ADDRESSES.NFT as `0x${string}`,
+        abi: NFT_ABI,
+        functionName: 'balanceOf',
+        args: [address],
+      },
+    ],
+  });
+
+  useEffect(() => {
+    if (isConfirmed && hash) {
+      setTransactionHash(hash);
+      alert(`Transaction confirmed with hash: ${hash}`);
+    }
+  }, [isConfirmed, hash]);
+  useEffect(() => {
+    if (txError) {
+      console.error('Error fetching transaction:', txError);
+      // setError('Failed to fetch transaction details.');
+      return;
+    }
+
+    if (txDetails) {
+      // Fetch transaction receipt for confirmation and logs
+      const txReceipt = txDetails.receipt;
+      console.log(`Transaction receipt: ${txReceipt}`);
+      // const txJSON = JSON.stringify(
+      //   txDetails,
+      //   (key, value) => (typeof value === 'bigint' ? value.toString() : value),
+      //   2
+      // );
+      // Convert to JSON string with BigInt values as strings
+      const txJSON = JSON.stringify(
+        txDetails,
+        (key, value) => (typeof value === 'bigint' ? value.toString() : value),
+        2
+      );
+
+      // Parse back to object and convert 'nonce' to a number
+      const txParsed = JSON.parse(txJSON);
+      txParsed.nonce = Number(txParsed.nonce);
+
+      console.log('Nonce as a number:', txParsed.nonce); // Now you can access nonce as a number
+
+      console.log(txParsed);
+      console.log(nftId);
+      const nftIdnew = (Number(txParsed.nonce) - 2).toString();
+      setNftId(nftIdnew);
+      console.log(nftIdnew);
+      setCurrentStep(1);
+
+      // if (txJSON) {
+      //   try {
+      //     // Assuming the Transfer event is emitted with the following signature:
+      //     // event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+      //     const transferEventSignature = ethers.utils.id(
+      //       'Transfer(address,address,uint256)'
+      //     );
+
+      //     for (const log of txJSON.receipt.logs) {
+      //       if (log.topics[0] === transferEventSignature) {
+      //         // The tokenId is the third topic in the Transfer event
+      //         const tokenId = ethers.BigNumber.from(log.topics[3]).toString();
+      //         setNftId(tokenId);
+      //         break;
+      //       }
+      //     }
+      //   } catch (error) {
+      //     console.error('Error parsing logs:', error);
+      //   }
+      // }
+      // Update state with transaction data
+      // setTransactionDetails(txDetails);
+      // setTransactionReceipt(txReceipt);
+      // setError(null);
+    } else if (transactionHash) {
+      // setError('Transaction not found.');
+    }
+  }, [txDetails, txError, transactionHash]);
 
   const handleConnect = () => {
     connect({ connector: injected() });
@@ -91,85 +191,140 @@ export default function CreateRWA() {
     }
   };
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  async function handleMintNFT() {
+    if (!isConnected) {
+      connect({ connector: injected() });
+      return;
+    }
 
     try {
-      if (!isConnected) {
-        connect({ connector: injected() });
-        return;
-      }
-
-      setIsLoading(true);
-
-      // 1. Upload image to IPFS
-      const fileInput = document.querySelector(
-        'input[type="file"]'
-      ) as HTMLInputElement;
-      const file = fileInput.files?.[0];
-      if (!file) throw new Error('No image selected');
-
-      const imageHash = await uploadToIPFS(file);
-      console.log('Image uploaded to IPFS:', imageHash);
-
-      // 2. Create and upload metadata
-      const metadata = {
-        name: formData.propertyName,
-        location: formData.location,
-        description: formData.description,
-        image: `ipfs://${imageHash}`,
-        price: formData.price,
-        currency: formData.currency,
-      };
-
-      const metadataBlob = new Blob([JSON.stringify(metadata)], {
-        type: 'application/json',
-      });
-      const metadataFile = new File([metadataBlob], 'metadata.json');
-      const metadataHash = await uploadToIPFS(metadataFile);
-      console.log('Metadata uploaded to IPFS:', metadataHash);
-
-      // 3. Call smart contract with updated syntax
-      const { hash } = await writeContract({
-        abi: FACTORY_ABI,
-        address: FACTORY_ADDRESS,
-        functionName: 'createFundraising',
+      const mintResult = await writeContract({
+        address: CONTRACT_ADDRESSES.NFT as `0x${string}`,
+        abi: NFT_ABI,
+        functionName: 'mintProperty',
         args: [
-          1n, // nftId
-          parseEther(formData.targetAmount),
-          parseEther('0.1'), // minInvestment
-          parseEther('1000'), // maxInvestment
-          30n, // durationDays
+          formData.location,
+          BigInt(formData.area),
+          formData.propertyType,
+          formData.documents,
         ],
       });
 
-      console.log('Transaction hash:', hash);
-      alert('Property listed successfully! Transaction hash: ' + hash);
+      console.log('Mint transaction sent:', mintResult);
+      alert('Mint transaction sent! Please confirm in MetaMask.');
 
-      // Reset form after successful submission
-      setFormData({
-        propertyName: '',
-        location: '',
-        price: '',
-        targetAmount: '',
-        currency: 'USDT',
-        description: '',
-      });
-      setImagePreview(null);
+      // Set the hash for useWaitForTransactionReceipt
+      if (mintResult && mintResult.hash) {
+        const { data: receipt } = await useWaitForTransactionReceipt({
+          hash: mintResult.hash,
+        });
+
+        // Extract the NFT ID from the receipt or event logs
+        const nftId = receipt?.logs?.find((log) => log.event === 'Transfer')
+          ?.args?.tokenId;
+        setNftId(nftId?.toString() || null);
+
+        setCurrentStep(1);
+      }
     } catch (error) {
-      console.error('Error:', error);
-      alert('Error creating listing. Check console for details.');
-    } finally {
-      setIsLoading(false);
+      console.error('Error during minting:', error);
+      alert('Error during minting. Check console for details.');
+    }
+  }
+
+  const handleApproveNFT = async () => {
+    console.log('nftId', nftId);
+    if (!nftId) return;
+
+    try {
+      const approveResult = await writeContract({
+        address: CONTRACT_ADDRESSES.NFT as `0x${string}`,
+        abi: NFT_ABI,
+        functionName: 'approve',
+        args: [
+          CONTRACT_ADDRESSES.FactoryFundraising as `0x${string}`,
+          BigInt(nftId),
+        ],
+      });
+      console.log('NFT approval transaction sent:', approveResult);
+      alert('NFT approval transaction sent! Please confirm in MetaMask.');
+      setCurrentStep(2);
+    } catch (error) {
+      console.error('Error during approval:', error);
+      alert('Error during approval. Check console for details.');
     }
   };
 
-  // Update the submit button to show contract writing state
-  const isSubmitting = isLoading || isContractWriting;
+  const handleCreateFundraising = async () => {
+    if (!nftId) return;
+
+    try {
+      const fundraisingResult = await writeContract({
+        address: CONTRACT_ADDRESSES.FactoryFundraising as `0x${string}`,
+        abi: FUNDRAISING_ABI,
+        functionName: 'createFundraising',
+        args: [
+          BigInt(nftId),
+          parseEther(formData.targetAmount),
+          parseEther('0.1'),
+          parseEther(formData.price),
+          BigInt(30),
+        ],
+      });
+      console.log('Fundraising transaction sent:', fundraisingResult);
+      alert('Fundraising transaction sent! Please confirm in MetaMask.');
+      setCurrentStep(3);
+    } catch (error) {
+      console.error('Error during fundraising creation:', error);
+      alert('Error during fundraising creation. Check console for details.');
+    }
+  };
+
+  // Combined loading state
+  const isSubmitting = isPending || isConfirming;
 
   return (
     <div className='min-h-screen bg-prime-black'>
       <div className='max-w-4xl mx-auto px-8 py-12'>
+        {/* Progress Step Indicator */}
+        <div className='mb-8'>
+          <div className='flex justify-between'>
+            <span
+              className={
+                currentStep >= 0 ? 'text-prime-gold' : 'text-text-secondary'
+              }
+            >
+              Mint NFT
+            </span>
+            <span
+              className={
+                currentStep >= 1 ? 'text-prime-gold' : 'text-text-secondary'
+              }
+            >
+              Approve NFT
+            </span>
+            <span
+              className={
+                currentStep >= 2 ? 'text-prime-gold' : 'text-text-secondary'
+              }
+            >
+              Create Fundraising
+            </span>
+          </div>
+          <div className='flex'>
+            <div
+              className={`flex-1 h-1 ${
+                currentStep >= 1 ? 'bg-prime-gold' : 'bg-text-secondary'
+              }`}
+            ></div>
+            <div
+              className={`flex-1 h-1 ${
+                currentStep >= 2 ? 'bg-prime-gold' : 'bg-text-secondary'
+              }`}
+            ></div>
+          </div>
+        </div>
+
         {/* Header */}
         <div className='mb-12'>
           <h1 className='font-display text-4xl uppercase tracking-wider text-text-primary mb-4'>
@@ -201,7 +356,7 @@ export default function CreateRWA() {
         </div>
 
         {/* Form */}
-        <form className='space-y-8' onSubmit={handleSubmit}>
+        <form className='space-y-8'>
           {/* Basic Information */}
           <div className='space-y-6'>
             <h2 className='font-display text-xl uppercase tracking-wider text-text-primary'>
@@ -375,22 +530,128 @@ export default function CreateRWA() {
             </div>
           </div>
 
-          {/* Submit Button */}
-          <div className='pt-6'>
+          {/* Add new fields after the Basic Information section */}
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+            <div className='space-y-2'>
+              <label className='block text-sm uppercase tracking-wider text-text-secondary'>
+                Area (sq ft)
+              </label>
+              <input
+                type='number'
+                name='area'
+                value={formData.area}
+                onChange={handleInputChange}
+                className='w-full px-4 py-3 bg-prime-gray border border-prime-gold/10 
+                         rounded text-text-primary placeholder-text-secondary/50
+                         focus:outline-none focus:border-prime-gold/30
+                         transition-all duration-300'
+                placeholder='e.g., 1500'
+                required
+              />
+            </div>
+
+            <div className='space-y-2'>
+              <label className='block text-sm uppercase tracking-wider text-text-secondary'>
+                Property Type
+              </label>
+              <select
+                name='propertyType'
+                value={formData.propertyType}
+                onChange={handleInputChange}
+                className='w-full px-4 py-3 bg-prime-gray border border-prime-gold/10 
+                         rounded text-text-primary
+                         focus:outline-none focus:border-prime-gold/30
+                         transition-all duration-300'
+                required
+              >
+                <option value=''>Select Property Type</option>
+                <option value='Residential'>Residential</option>
+                <option value='Commercial'>Commercial</option>
+                <option value='Industrial'>Industrial</option>
+                <option value='Land'>Land</option>
+              </select>
+            </div>
+
+            <div className='space-y-2'>
+              <label className='block text-sm uppercase tracking-wider text-text-secondary'>
+                Documents (URLs/References)
+              </label>
+              <input
+                type='text'
+                name='documents'
+                value={formData.documents}
+                onChange={handleInputChange}
+                className='w-full px-4 py-3 bg-prime-gray border border-prime-gold/10 
+                         rounded text-text-primary placeholder-text-secondary/50
+                         focus:outline-none focus:border-prime-gold/30
+                         transition-all duration-300'
+                placeholder='e.g., IPFS hash or document references'
+                required
+              />
+            </div>
+          </div>
+
+          {/* Step Buttons */}
+          <div className='pt-6 space-y-4'>
             <button
-              type='submit'
-              disabled={isSubmitting}
-              className={`w-full px-8 py-4 bg-gradient-to-r from-prime-gold to-prime-gold/80
-                       text-prime-black font-medium rounded
-                       hover:from-prime-gold/90 hover:to-prime-gold/70
-                       transition-all duration-300 uppercase tracking-wider
-                       ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+              type='button'
+              onClick={handleMintNFT}
+              disabled={!isConnected || isPending || currentStep !== 0}
+              className={`w-full px-8 py-4 bg-prime-gray border border-prime-gold/20
+                hover:border-prime-gold/40 text-text-primary rounded
+                transition-all duration-300 uppercase tracking-wider
+                ${
+                  !isConnected || isPending || currentStep !== 0
+                    ? 'opacity-50 cursor-not-allowed'
+                    : ''
+                }`}
             >
-              {isSubmitting ? 'Processing...' : 'Create Listing'}
+              {isPending ? 'Processing...' : 'Mint NFT'}
+            </button>
+
+            <button
+              type='button'
+              onClick={handleApproveNFT}
+              disabled={!isConnected || isPending || currentStep !== 1}
+              className={`w-full px-8 py-4 bg-prime-gray border border-prime-gold/20
+                hover:border-prime-gold/40 text-text-primary rounded
+                transition-all duration-300 uppercase tracking-wider
+                ${
+                  !isConnected || isPending || currentStep !== 1
+                    ? 'opacity-50 cursor-not-allowed'
+                    : ''
+                }`}
+            >
+              {isPending ? 'Processing...' : 'Approve NFT'}
+            </button>
+
+            <button
+              type='button'
+              onClick={handleCreateFundraising}
+              disabled={!isConnected || isPending || currentStep !== 2}
+              className={`w-full px-8 py-4 bg-prime-gray border border-prime-gold/20
+                hover:border-prime-gold/40 text-text-primary rounded
+                transition-all duration-300 uppercase tracking-wider
+                ${
+                  !isConnected || isPending || currentStep !== 2
+                    ? 'opacity-50 cursor-not-allowed'
+                    : ''
+                }`}
+            >
+              {isPending ? 'Processing...' : 'Create Fundraising'}
             </button>
           </div>
+
+          {/* Display NFT ID */}
+          {nftId && <div>NFT ID: {nftId}</div>}
         </form>
       </div>
+      {transactionHash && <div>Transaction Hash: {transactionHash}</div>}
+      {isConfirming && <div>Waiting for confirmation...</div>}
+      {isConfirmed && <div>Transaction confirmed.</div>}
+      {error && (
+        <div>Error: {(error as BaseError).shortMessage || error.message}</div>
+      )}
     </div>
   );
 }
