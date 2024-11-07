@@ -5,7 +5,6 @@ export const GET_RWA_TOKENS = gql`
     fundraisings(first: 100) {
       id
       address
-      nftId
       owner
       goalAmount
       minInvestment
@@ -32,36 +31,33 @@ export const GET_RWA_TOKENS = gql`
   }
 `;
 
-export const GET_RWA_BY_ID = gql`
-  query GetRWAById($id: ID!) {
-    rwa(id: $id) {
+export const GET_RWA_BY_ID = (id: string) => gql`
+  query {
+    fundraisings(where: { id: "${id}" }) {
       id
-      name
-      location
-      raisedAmount
-      targetAmount
-      price
-      currency
-      image
-      description
-      amenities
-      details {
-        size
-        built
-        type
-        status
+      address
+      owner
+      goalAmount
+      minInvestment
+      maxInvestment
+      deadline
+      totalRaised
+      isCompleted
+      investments {
+        id
+        investor
+        amount
+        claimed
+        timestamp
       }
-      documents {
+      propertyToken {
+        id
+        address
         name
-        verified
+        symbol
+        totalSupply
       }
-      investment {
-        minInvestment
-        expectedReturn
-        investmentPeriod
-        totalShares
-        availableShares
-      }
+      createdAt
     }
   }
 `;

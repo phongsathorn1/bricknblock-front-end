@@ -297,8 +297,6 @@ export default function CreateRWA() {
                            transition-all duration-300'
                 >
                   <option value='USDT'>USDT</option>
-                  <option value='ETH'>ETH</option>
-                  <option value='BTC'>BTC</option>
                 </select>
               </div>
             </div>

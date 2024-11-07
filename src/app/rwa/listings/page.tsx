@@ -50,6 +50,15 @@ export default function ListedRWA() {
       };
     }) || mockRWAItems; // Fallback to complete mockRWAItems if
 
+  // Add filtered items logic
+  const filteredItems = rwaItems.filter((item) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      item.name.toLowerCase().includes(searchLower) ||
+      item.location.toLowerCase().includes(searchLower)
+    );
+  });
+
   return (
     <div className='min-h-screen bg-prime-black'>
       {/* Header Section */}
@@ -68,7 +77,9 @@ export default function ListedRWA() {
         <div className='flex gap-4 mb-8'>
           <input
             type='text'
-            placeholder='Search RWAs...'
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder='Search by name or location...'
             className='px-4 py-2 bg-prime-gray border border-prime-gold/10 
                      rounded text-text-primary placeholder-text-secondary/50
                      focus:outline-none focus:border-prime-gold/30
@@ -88,7 +99,7 @@ export default function ListedRWA() {
         </div>
 
         {/* RWA Grid */}
-        <RWAGrid items={rwaItems} />
+        <RWAGrid items={filteredItems} />
       </div>
     </div>
   );
