@@ -25,6 +25,7 @@ export function useGraphQuery<T>(query: DocumentNode, variables?: any) {
     };
 
     fetchData();
+    console.log('data', data);
   }, [query, JSON.stringify(variables)]);
 
   return { data, loading, error };

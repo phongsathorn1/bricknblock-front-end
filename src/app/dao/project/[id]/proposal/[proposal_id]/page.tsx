@@ -1,64 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
-
-const mockProposal = {
-    id: '1',
-    title: 'Implement Multi-Sig Treasury Management',
-    creator: '0x1234...5678',
-    creatorAvatar: 'https://avatars.githubusercontent.com/u/1?v=4',
-    status: 'active',
-    startDate: '2024-03-15T00:00:00Z',
-    endDate: '2024-03-22T00:00:00Z',
-    snapshot: '19146428',
-    strategies: [
-        { name: 'erc20-balance-of', symbol: 'CVX', params: { address: '0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B' } }
-    ],
-    votes: {
-        for: 1500000,
-        against: 500000,
-        abstain: 100000,
-    },
-    voterList: [
-        { address: '0xf89d7b9c864f589bbF53a82105107622B35EaA40', choice: 'for', votingPower: 985420.23, timestamp: '2024-03-15T12:30:00Z' },
-        { address: '0x1234567890123456789012345678901234567890', choice: 'against', votingPower: 245680.45, timestamp: '2024-03-15T13:45:00Z' },
-    ],
-    description: `
-    # Summary
-    This proposal aims to implement a multi-signature wallet system for treasury management to enhance security and decentralization.
-    
-    ## Background
-    Currently, treasury management relies on single-signature control which poses security risks.
-    
-    ## Motivation
-    - Improve security of treasury funds
-    - Increase decentralization of fund management
-    - Enable transparent governance
-    
-    ## Specification
-    1. Implement 5/7 multi-sig wallet
-    2. Assign key holders through community vote
-    3. Require min. 5 signatures for transactions > 100k USD
-    
-    ## Benefits
-    - Enhanced security
-    - Decentralized control
-    - Community oversight
-    `,
-    // Added fundraising data
-    fundraising: {
-        target: 1000000,
-        current: 650000,
-        startDate: '2024-03-23T00:00:00Z',
-        endDate: '2024-04-23T00:00:00Z',
-        contributors: [
-            { address: '0xabc...def', amount: 250000, timestamp: '2024-03-23T14:20:00Z' },
-            { address: '0x789...012', amount: 400000, timestamp: '2024-03-24T09:15:00Z' },
-        ]
-    }
-};
+import { useGraphQuery } from '@/lib/hooks/useGraphQL';
+import { GET_PROPOSAL_BY_ID, GET_VOTING_POWER } from '@/lib/graphql/queries';
+import { Proposal } from '../../page';
+import { ethers } from 'ethers';
+import { DAO_PROPOSALS_ABI, PROPERTY_TOKEN_ABI } from '@/constants/abi';
+import { CONTRACT_ADDRESSES } from '@/constants/contracts';
 
 type VoteOption = 'for' | 'against' | 'abstain';
 
@@ -73,6 +23,21 @@ const VoteModal = ({
     selectedVote: VoteOption | null;
     onVoteSubmit: (vote: VoteOption) => void;
 }) => {
+    const params = useParams();
+    const projectId = params.id;
+
+    const [address, setAddress] = useState<string | null>(null);
+    const [isConnected, setIsConnected] = useState(false);
+
+    useEffect(() => {
+        const address = localStorage.getItem('address');
+        const isConnected = localStorage.getItem('isConnected') === 'true';
+        setAddress(address);
+        setIsConnected(isConnected);
+    }, []);
+
+    const { data, loading, error } =
+        useGraphQuery<{ propertyToken: any }>(GET_VOTING_POWER(projectId as string, address ?? ''));
     if (!isOpen || !selectedVote) return null;
 
     return (
@@ -93,7 +58,7 @@ const VoteModal = ({
 
                     <div className="p-4 bg-stone-700 rounded-lg">
                         <p className="text-sm text-text-secondary">Voting with:</p>
-                        <p className="text-text-primary font-medium">156,432.45 CVX</p>
+                        <p className="text-text-primary font-medium">{data?.propertyToken.holders[0].votingPower / Math.pow(10, 18)} {data?.propertyToken.symbol}</p>
                     </div>
                 </div>
 
@@ -165,15 +130,117 @@ export default function ProposalPage() {
     const [isFundModalOpen, setIsFundModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<'proposal' | 'votes' | 'timeline'>('proposal');
 
-    const totalVotes = mockProposal.votes.for + mockProposal.votes.against + mockProposal.votes.abstain;
-    const forPercentage = (mockProposal.votes.for / totalVotes) * 100;
-    const againstPercentage = (mockProposal.votes.against / totalVotes) * 100;
-    const abstainPercentage = (mockProposal.votes.abstain / totalVotes) * 100;
-    const totalVoters = mockProposal.voterList.length;
+    const [isPending, setIsPending] = useState(false);
+    const [isConnected, setIsConnected] = useState(false);
 
-    const handleVoteSubmit = (vote: VoteOption) => {
+    useEffect(() => {
+        if (window.ethereum) {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            provider.listAccounts().then((accounts) => {
+                if (accounts.length > 0) {
+                    setIsConnected(true);
+                }
+            });
+        }
+    }, []);
+
+    const { data, loading, error } =
+        useGraphQuery<{ proposal: Proposal }>(GET_PROPOSAL_BY_ID(params.proposal_id as string));
+
+    if (loading) return null;
+    if (error) return <div>Error loading proposal</div>;
+    if (!data) return null;
+
+    const proposalData = JSON.parse(data.proposal.description);
+
+    const totalVotes = parseInt(data.proposal.forVotes) + parseInt(data.proposal.againstVotes);
+    const forPercentage = totalVotes > 0 ? (parseInt(data.proposal.forVotes) / totalVotes) * 100 : 0;
+    const againstPercentage = totalVotes > 0 ? (parseInt(data.proposal.againstVotes) / totalVotes) * 100 : 0;
+
+    const getStatus = (state: number) => {
+        switch (state) {
+            case 0:
+                return 'Pending';
+            case 1:
+                return 'Active';
+            case 3:
+                return 'Defeated';
+            case 4:
+                return 'Succeeded';
+            case 5:
+                return 'Executed';
+            default:
+                return 'Pending';
+        }
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'Active':
+                return 'bg-prime-gold/10 text-prime-gold';
+            case 'Defeated':
+                return 'bg-red-500/10 text-red-500';
+            case 'Succeeded':
+            case 'Executed':
+                return 'bg-green-500/10 text-green-500';
+            default:
+                return 'bg-gray-500/10 text-gray-500';
+        }
+    };
+
+    const status = getStatus(data.proposal.state);
+
+    const handleVoteSubmit = async (vote: VoteOption) => {
         console.log('Submitting vote:', vote);
-        setIsVoteModalOpen(false);
+
+        try {
+            setIsPending(true); // Start loading
+            if (!window.ethereum) {
+                alert('MetaMask is not installed. Please install it to continue.');
+                return;
+            }
+
+            await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+
+            const PropertyGovernanceContract = new ethers.Contract(
+                CONTRACT_ADDRESSES.PropertyGovernance,
+                DAO_PROPOSALS_ABI,
+                signer
+            );
+
+            const DelegateContract = new ethers.Contract(
+                params.id?.toString() || '',
+                PROPERTY_TOKEN_ABI,
+                signer
+            );
+
+            const delegateResult = await DelegateContract.delegate(signer.getAddress());
+            const delegateReceipt = await delegateResult.wait();
+            console.log('Delegate receipt:', delegateReceipt);
+
+            console.log('Casting vote...', params.id as string,
+                data.proposal.proposalId,
+                vote === 'for');
+
+            const voteResult = await PropertyGovernanceContract.castVote(
+                params.id as string,
+                data.proposal.proposalId,
+                vote === 'for'
+            )
+            console.log('vote result:', voteResult);
+
+            const receipt = await voteResult.wait();
+            console.log('Receipt:', receipt);
+
+
+        } catch (error) {
+            console.error('Error submitting vote:', error);
+        } finally {
+            setIsVoteModalOpen(false);
+        }
     };
 
     const handleFundSubmit = (amount: number) => {
@@ -181,30 +248,20 @@ export default function ProposalPage() {
         setIsFundModalOpen(false);
     };
 
-    const fundraisingProgress = (mockProposal.fundraising.current / mockProposal.fundraising.target) * 100;
-
     return (
         <div className="min-h-screen bg-prime-black">
             <div className="max-w-6xl mx-auto px-8 py-12">
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-3xl font-medium text-text-primary mb-4">
-                        {mockProposal.title}
+                        {proposalData.title}
                     </h1>
                     <div className="flex items-center gap-3">
-                        <div className="relative w-6 h-6 rounded-full overflow-hidden">
-                            <Image src={mockProposal.creatorAvatar} alt={mockProposal.creator} fill className="object-cover" />
-                        </div>
-                        <span className="text-text-secondary">{mockProposal.creator}</span>
+                        <span className="text-text-secondary">{data.proposal.proposer}</span>
                         <span className="text-text-secondary">•</span>
-                        <span className={`px-3 py-1 rounded-full text-sm ${mockProposal.status === 'active' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
-                            }`}>
-                            {mockProposal.status.charAt(0).toUpperCase() + mockProposal.status.slice(1)}
+                        <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(status)}`}>
+                            {status}
                         </span>
-                        <span className="text-text-secondary">•</span>
-                        <span className="text-text-secondary">{totalVoters} voters</span>
-                        <span className="text-text-secondary">•</span>
-                        <span className="text-text-secondary">{totalVotes.toLocaleString()} votes</span>
                     </div>
                 </div>
 
@@ -233,77 +290,21 @@ export default function ProposalPage() {
                         </div>
 
                         {activeTab === 'proposal' ? (
-                            <>
-                                <div className="prose prose-invert max-w-none mb-8">
-                                    {mockProposal.description.split('\n').map((line, i) => (
-                                        <p key={i}>{line}</p>
-                                    ))}
-                                </div>
-
-                                {/* Fundraising Section */}
-                                <div className="card-prime mt-8">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h3 className="text-lg font-medium text-text-primary">Fundraising Progress</h3>
-                                        <button
-                                            onClick={() => setIsFundModalOpen(true)}
-                                            className="px-4 py-2 bg-gradient-to-r from-prime-gold to-prime-gold/80 text-prime-black font-medium rounded hover:from-prime-gold/90 hover:to-prime-gold/70 transition-all duration-300"
-                                        >
-                                            Contribute Funds
-                                        </button>
-                                    </div>
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-text-primary">Target: {mockProposal.fundraising.target.toLocaleString()} CVX</span>
-                                            <span className="text-text-secondary">{fundraisingProgress.toFixed(1)}% Raised</span>
-                                        </div>
-                                        <div className="h-2 bg-prime-black/50 rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-prime-gold rounded-full"
-                                                style={{ width: `${fundraisingProgress}%` }}
-                                            />
-                                        </div>
-                                        <div className="flex justify-between text-sm text-text-secondary">
-                                            <span>Raised: {mockProposal.fundraising.current.toLocaleString()} CVX</span>
-                                            <span>Ends: {new Date(mockProposal.fundraising.endDate).toLocaleDateString()}</span>
-                                        </div>
-
-                                        <div className="mt-6">
-                                            <h4 className="text-md font-medium text-text-primary mb-3">Recent Contributors</h4>
-                                            <div className="space-y-3">
-                                                {mockProposal.fundraising.contributors.map((contributor, index) => (
-                                                    <div key={index} className="flex justify-between items-center p-3 bg-white/5 hover:bg-white/10 transition-colors rounded">
-                                                        <span className="text-text-primary">{contributor.address}</span>
-                                                        <div className="text-right">
-                                                            <div className="text-text-primary">{contributor.amount.toLocaleString()} CVX</div>
-                                                            <div className="text-sm text-text-secondary">
-                                                                {new Date(contributor.timestamp).toLocaleString()}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </>
+                            <div className="prose prose-invert max-w-none mb-8">
+                                <p>{proposalData.detail}</p>
+                            </div>
                         ) : activeTab === 'votes' ? (
                             <div className="space-y-4">
-                                {mockProposal.voterList.map((vote, index) => (
+                                {data.proposal.votes.map((vote: any, index: number) => (
                                     <div key={index} className="flex items-center justify-between p-4 border border-prime-gray/30 rounded-lg">
                                         <div className="flex items-center gap-3">
-                                            <span className="text-text-primary">{vote.address}</span>
-                                            <span className={`px-2 py-1 rounded text-sm ${vote.choice === 'for' ? 'bg-green-500/10 text-green-500' :
-                                                vote.choice === 'against' ? 'bg-red-500/10 text-red-500' :
-                                                    'bg-gray-500/10 text-gray-500'
-                                                }`}>
-                                                {vote.choice}
+                                            <span className="text-text-primary">{vote.voter}</span>
+                                            <span className={`px-2 py-1 rounded text-sm ${vote.support ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                                                {vote.support ? 'For' : 'Against'}
                                             </span>
                                         </div>
                                         <div className="text-right">
-                                            <div className="text-text-primary">{vote.votingPower.toLocaleString()} CVX</div>
-                                            <div className="text-sm text-text-secondary">
-                                                {new Date(vote.timestamp).toLocaleDateString()}
-                                            </div>
+                                            <div className="text-text-primary">{vote.weight} votes</div>
                                         </div>
                                     </div>
                                 ))}
@@ -312,38 +313,7 @@ export default function ProposalPage() {
                             <div className="relative">
                                 <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-prime-gray/30"></div>
                                 <div className="space-y-6">
-                                    {[...mockProposal.voterList, ...mockProposal.fundraising.contributors.map(c => ({
-                                        address: c.address,
-                                        choice: 'contributed',
-                                        votingPower: c.amount,
-                                        timestamp: c.timestamp
-                                    }))].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map((event, index) => (
-                                        <div key={index} className="relative pl-8">
-                                            <div className={`absolute left-0 w-4 h-4 rounded-full border-2 ${'choice' in event ?
-                                                    event.choice === 'for' ? 'border-green-500 bg-green-500/20' :
-                                                        event.choice === 'against' ? 'border-red-500 bg-red-500/20' :
-                                                            'border-gray-500 bg-gray-500/20'
-                                                    : 'border-prime-gold bg-prime-gold/20'
-                                                }`}></div>
-                                            <div className="text-sm text-text-secondary">
-                                                {new Date(event.timestamp).toLocaleString()}
-                                            </div>
-                                            <div className="text-text-primary mt-1">{event.address}</div>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className={`px-2 py-0.5 rounded text-sm ${'choice' in event ?
-                                                        event.choice === 'for' ? 'bg-green-500/10 text-green-500' :
-                                                            event.choice === 'against' ? 'bg-red-500/10 text-red-500' :
-                                                                'bg-gray-500/10 text-gray-500'
-                                                        : 'bg-prime-gold/10 text-prime-gold'
-                                                    }`}>
-                                                    {'choice' in event ? event.choice : 'contributed'}
-                                                </span>
-                                                <span className="text-text-secondary">
-                                                    {event.votingPower.toLocaleString()} CVX
-                                                </span>
-                                            </div>
-                                        </div>
-                                    ))}
+                                    {/* Timeline events would go here */}
                                 </div>
                             </div>
                         )}
@@ -355,16 +325,12 @@ export default function ProposalPage() {
                             <h3 className="text-lg font-medium text-text-primary mb-4">Information</h3>
                             <div className="space-y-3">
                                 <div>
-                                    <div className="text-sm text-text-secondary">Snapshot</div>
-                                    <div className="text-text-primary">{mockProposal.snapshot}</div>
+                                    <div className="text-sm text-text-secondary">Start Time</div>
+                                    <div className="text-text-primary">{new Date(parseInt(data.proposal.startTime) * 1000).toLocaleString()}</div>
                                 </div>
                                 <div>
-                                    <div className="text-sm text-text-secondary">Strategies</div>
-                                    {mockProposal.strategies.map((strategy, index) => (
-                                        <div key={index} className="text-text-primary">
-                                            {strategy.name} ({strategy.symbol})
-                                        </div>
-                                    ))}
+                                    <div className="text-sm text-text-secondary">End Time</div>
+                                    <div className="text-text-primary">{new Date(parseInt(data.proposal.endTime) * 1000).toLocaleString()}</div>
                                 </div>
                             </div>
                         </div>
@@ -373,24 +339,36 @@ export default function ProposalPage() {
                         <div className="card-prime">
                             <h3 className="text-lg font-medium text-text-primary mb-4">Current Results</h3>
                             <div className="space-y-4">
-                                {(['for', 'against', 'abstain'] as const).map((option) => (
-                                    <div key={option}>
-                                        <div className="flex justify-between text-sm mb-1">
-                                            <span className="capitalize text-text-primary">{option}</span>
-                                            <span className="text-text-secondary">
-                                                {((mockProposal.votes[option] / totalVotes) * 100).toFixed(1)}%
-                                            </span>
-                                        </div>
-                                        <div className="h-2 bg-prime-black/50 rounded-full overflow-hidden">
-                                            <div className={`h-full rounded-full ${option === 'for' ? 'bg-green-500' :
-                                                option === 'against' ? 'bg-red-500' :
-                                                    'bg-gray-500'
-                                                }`} style={{
-                                                    width: `${(mockProposal.votes[option] / totalVotes) * 100}%`
-                                                }} />
-                                        </div>
+                                <div>
+                                    <div className="flex justify-between text-sm mb-1">
+                                        <span className="text-text-primary">For</span>
+                                        <span className="text-text-secondary">{forPercentage.toFixed(1)}%</span>
                                     </div>
-                                ))}
+                                    <div className="h-2 bg-prime-black/50 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-green-500 rounded-full"
+                                            style={{ width: `${forPercentage}%` }}
+                                        />
+                                    </div>
+                                    <div className="text-sm text-text-secondary mt-1">
+                                        {data.proposal.forVotes} votes
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="flex justify-between text-sm mb-1">
+                                        <span className="text-text-primary">Against</span>
+                                        <span className="text-text-secondary">{againstPercentage.toFixed(1)}%</span>
+                                    </div>
+                                    <div className="h-2 bg-prime-black/50 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-red-500 rounded-full"
+                                            style={{ width: `${againstPercentage}%` }}
+                                        />
+                                    </div>
+                                    <div className="text-sm text-text-secondary mt-1">
+                                        {data.proposal.againstVotes} votes
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -398,7 +376,7 @@ export default function ProposalPage() {
                         <div className="card-prime">
                             <h3 className="text-lg font-medium text-text-primary mb-4">Cast your vote</h3>
                             <div className="space-y-2">
-                                {(['for', 'against', 'abstain'] as const).map((option) => (
+                                {(['for', 'against'] as const).map((option) => (
                                     <button
                                         key={option}
                                         onClick={() => {
@@ -406,16 +384,12 @@ export default function ProposalPage() {
                                             setIsVoteModalOpen(true);
                                         }}
                                         className={`w-full p-4 rounded-lg border-2 ${selectedVote === option
-                                                ? option === 'for'
-                                                    ? 'border-green-500 bg-green-500/20 text-green-400'
-                                                    : option === 'against'
-                                                        ? 'border-red-500 bg-red-500/20 text-red-400'
-                                                        : 'border-gray-500 bg-gray-500/20 text-gray-400'
-                                                : option === 'for'
-                                                    ? 'border-green-500/50 hover:bg-green-500/10 text-green-500'
-                                                    : option === 'against'
-                                                        ? 'border-red-500/50 hover:bg-red-500/10 text-red-500'
-                                                        : 'border-gray-500/50 hover:bg-gray-500/10 text-gray-500'
+                                            ? option === 'for'
+                                                ? 'border-green-500 bg-green-500/20 text-green-400'
+                                                : 'border-red-500 bg-red-500/20 text-red-400'
+                                            : option === 'for'
+                                                ? 'border-green-500/50 hover:bg-green-500/10 text-green-500'
+                                                : 'border-red-500/50 hover:bg-red-500/10 text-red-500'
                                             } transition-all duration-200 capitalize font-medium 
                                         active:scale-[0.99] shadow-sm hover:shadow-md`}
                                     >
