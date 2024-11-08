@@ -270,7 +270,7 @@ export default function CreateRWA() {
           </div>
           <div className='flex'>
             <div
-              className={`flex-1 h-1 ${
+              className={`flex-1 h-2 rounded-full transition-all duration-500 ${
                 currentStep >= 1 ? 'bg-prime-gold' : 'bg-text-secondary'
               }`}
             ></div>
@@ -294,23 +294,6 @@ export default function CreateRWA() {
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                   <div className='space-y-2'>
                     <label className='block text-sm uppercase tracking-wider text-text-secondary'>
-                      Property Name
-                    </label>
-                    <input
-                      type='text'
-                      name='propertyName'
-                      value={formData.propertyName}
-                      onChange={handleInputChange}
-                      className='w-full px-4 py-3 bg-prime-gray border border-prime-gold/10 
-                               rounded text-text-primary placeholder-text-secondary/50
-                               focus:outline-none focus:border-prime-gold/30
-                               transition-all duration-300'
-                      placeholder='e.g., Luxury Villa Ubud'
-                      required
-                    />
-                  </div>
-                  <div className='space-y-2'>
-                    <label className='block text-sm uppercase tracking-wider text-text-secondary'>
                       Location
                     </label>
                     <input
@@ -325,6 +308,27 @@ export default function CreateRWA() {
                       placeholder='e.g., Bali, Indonesia'
                       required
                     />
+                  </div>
+                  <div className='space-y-2'>
+                    <label className='block text-sm uppercase tracking-wider text-text-secondary'>
+                      Property Type
+                    </label>
+                    <select
+                      name='propertyType'
+                      value={formData.propertyType}
+                      onChange={handleInputChange}
+                      className='w-full px-4 py-3 bg-prime-gray border border-prime-gold/10 
+                               rounded text-text-primary
+                               focus:outline-none focus:border-prime-gold/30
+                               transition-all duration-300'
+                      required
+                    >
+                      <option value=''>Select Property Type</option>
+                      <option value='Residential'>Residential</option>
+                      <option value='Commercial'>Commercial</option>
+                      <option value='Industrial'>Industrial</option>
+                      <option value='Land'>Land</option>
+                    </select>
                   </div>
                 </div>
                 <div className='grid grid-cols-1 md:grid-cols-4 gap-6'>
@@ -399,7 +403,7 @@ export default function CreateRWA() {
               </div>
 
               {/* Additional Fields */}
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                 <div className='space-y-2'>
                   <label className='block text-sm uppercase tracking-wider text-text-secondary'>
                     Area (sq ft)
@@ -416,27 +420,6 @@ export default function CreateRWA() {
                     placeholder='e.g., 1500'
                     required
                   />
-                </div>
-                <div className='space-y-2'>
-                  <label className='block text-sm uppercase tracking-wider text-text-secondary'>
-                    Property Type
-                  </label>
-                  <select
-                    name='propertyType'
-                    value={formData.propertyType}
-                    onChange={handleInputChange}
-                    className='w-full px-4 py-3 bg-prime-gray border border-prime-gold/10 
-                             rounded text-text-primary
-                             focus:outline-none focus:border-prime-gold/30
-                             transition-all duration-300'
-                    required
-                  >
-                    <option value=''>Select Property Type</option>
-                    <option value='Residential'>Residential</option>
-                    <option value='Commercial'>Commercial</option>
-                    <option value='Industrial'>Industrial</option>
-                    <option value='Land'>Land</option>
-                  </select>
                 </div>
                 <div className='space-y-2'>
                   <label className='block text-sm uppercase tracking-wider text-text-secondary'>
@@ -466,7 +449,7 @@ export default function CreateRWA() {
                     name='description'
                     value={formData.description}
                     onChange={handleInputChange}
-                    rows={6}
+                    rows={4}
                     className='w-full px-4 py-3 bg-prime-gray border border-prime-gold/10 
                              rounded text-text-primary placeholder-text-secondary/50
                              focus:outline-none focus:border-prime-gold/30
@@ -560,11 +543,11 @@ export default function CreateRWA() {
               </h3>
               <div className='space-y-2 text-black'>
                 <div className='flex justify-between'>
-                  <strong>Property Name:</strong>{' '}
-                  <span>{formData.propertyName}</span>
+                  <strong>Location:</strong> <span>{formData.location}</span>
                 </div>
                 <div className='flex justify-between'>
-                  <strong>Location:</strong> <span>{formData.location}</span>
+                  <strong>Property Type:</strong>{' '}
+                  <span>{formData.propertyType}</span>
                 </div>
                 <div className='flex justify-between'>
                   <strong>Target Amount:</strong>{' '}
@@ -579,10 +562,6 @@ export default function CreateRWA() {
                 </div>
                 <div className='flex justify-between'>
                   <strong>Area:</strong> <span>{formData.area}</span>
-                </div>
-                <div className='flex justify-between'>
-                  <strong>Property Type:</strong>{' '}
-                  <span>{formData.propertyType}</span>
                 </div>
                 <div className='flex justify-between'>
                   <strong>Documents:</strong> <span>{formData.documents}</span>

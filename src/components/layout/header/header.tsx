@@ -3,9 +3,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import logo from '@/assets/icons/pascalwifhat.png';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ethers } from 'ethers';
-
+import { useGraphQuery } from '@/lib/hooks/useGraphQL';
+import { GET_RWA_TOKENS } from '@/lib/graphql/queries';
 // Navigation types
 interface NavItem {
   label: string;
@@ -42,6 +43,28 @@ export const Header = () => {
   const [isConnected, setIsConnected] = useState(
     () => localStorage.getItem('isConnected') === 'true'
   );
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Fetch data using the useGraphQuery hook
+  const { data, loading, error } =
+    useGraphQuery<SubgraphResponse>(GET_RWA_TOKENS);
+
+  // Filter RWAs by location based on search query
+  const filteredRWAs = useMemo(() => {
+    return data?.fundraisings?.filter((rwa) =>
+      rwa.nft.location.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [data, searchQuery]);
+
+  // Handle loading and error states
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    console.error('Error fetching RWA tokens:', error);
+    return <div>Error loading data</div>;
+  }
 
   const handleConnect = async () => {
     if (window.ethereum) {
@@ -115,30 +138,36 @@ export const Header = () => {
           ))}
         </nav>
 
-        {/* Search */}
-        <div className='hidden md:block max-w-md w-full px-4'>
-          <div className='relative'>
-            <input
-              type='text'
-              placeholder='Search RWAs/DAOs...'
-              className='w-full px-4 py-2 bg-prime-gray border border-prime-gold/10 
-                       rounded text-text-primary placeholder-text-secondary/50
-                       focus:outline-none focus:border-prime-gold/30
-                       transition-all duration-300'
-            />
-            <svg
-              className='absolute right-4 top-1/2 transform -translate-y-1/2 text-text-secondary'
-              width='16'
-              height='16'
-              viewBox='0 0 24 24'
-              fill='none'
-              stroke='currentColor'
-              strokeWidth='2'
-            >
-              <circle cx='11' cy='11' r='8' />
-              <line x1='21' y1='21' x2='16.65' y2='16.65' />
-            </svg>
-          </div>
+        {/* Search Bar */}
+        <div className='relative'>
+          <input
+            type='text'
+            placeholder='Search by location'
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className='px-4 py-2 border border-prime-gold/20 rounded bg-prime-gray text-text-primary'
+          />
+
+          {/* Floating Dropdown List of Matching RWAs */}
+          {searchQuery && (
+            <div className='absolute left-0 right-0 mt-1 bg-prime-gray border border-prime-gold/20 rounded shadow-lg max-h-40 overflow-y-auto'>
+              {filteredRWAs?.length ? (
+                filteredRWAs.map((rwa) => (
+                  <Link
+                    key={rwa.id}
+                    href={`/rwa/${rwa.address}`}
+                    className='block px-4 py-2 text-text-secondary hover:bg-prime-gold/5'
+                  >
+                    - {rwa.nft.location} #{rwa.nft.tokenId}
+                  </Link>
+                ))
+              ) : (
+                <div className='px-4 py-2 text-text-secondary'>
+                  No matches found
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Connect Wallet Button */}

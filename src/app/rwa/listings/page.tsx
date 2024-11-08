@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { GET_RWA_TOKENS } from '@/lib/graphql/queries';
 export default function ListedRWA() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedType, setSelectedType] = useState('');
   const { data, loading, error } =
     useGraphQuery<SubgraphResponse>(GET_RWA_TOKENS);
 
@@ -61,16 +62,18 @@ export default function ListedRWA() {
         currency: 'USDT',
         image: mockItem.image,
         status,
+        type: fundraising.nft?.propertyType || mockItem.type,
       };
     }) || mockRWAItems;
 
   // Add filtered items logic
   const filteredItems = rwaItems.filter((item) => {
     const searchLower = searchTerm.toLowerCase();
-    return (
+    const matchesSearch =
       item.name.toLowerCase().includes(searchLower) ||
-      item.location.toLowerCase().includes(searchLower)
-    );
+      item.location.toLowerCase().includes(searchLower);
+    const matchesType = selectedType ? item.type === selectedType : true;
+    return matchesSearch && matchesType;
   });
 
   return (
@@ -100,15 +103,18 @@ export default function ListedRWA() {
                      transition-all duration-300 w-64'
           />
           <select
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value)}
             className='px-4 py-2 bg-prime-gray border border-prime-gold/10 
                            rounded text-text-primary
                            focus:outline-none focus:border-prime-gold/30
                            transition-all duration-300'
           >
             <option value=''>All Categories</option>
-            <option value='real-estate'>Real Estate</option>
-            <option value='art'>Art</option>
-            <option value='collectibles'>Collectibles</option>
+            <option value='Residential'>Residential</option>
+            <option value='Commercial'>Commercial</option>
+            <option value='Industrial'>Industrial</option>
+            <option value='Land'>Land</option>
           </select>
         </div>
 
@@ -118,95 +124,3 @@ export default function ListedRWA() {
     </div>
   );
 }
-
-// Mock data remains the same
-// const mockRWAItems: RWACardProps[] = [
-//   {
-//     id: '1',
-//     name: 'Luxury Villa Ubud',
-//     location: 'Bali, Indonesia',
-//     raisedAmount: 750000,
-//     targetAmount: 1000000,
-//     price: '250,000',
-//     currency: 'USDT',
-//     image:
-//       'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop&q=60',
-//   },
-//   {
-//     id: '2',
-//     name: 'Beachfront Resort',
-//     location: 'Phuket, Thailand',
-//     raisedAmount: 450000,
-//     targetAmount: 800000,
-//     price: '180,000',
-//     currency: 'USDT',
-//     image:
-//       'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800&auto=format&fit=crop&q=60',
-//   },
-//   {
-//     id: '3',
-//     name: 'Penthouse Suite',
-//     location: 'Dubai, UAE',
-//     raisedAmount: 1200000,
-//     targetAmount: 1500000,
-//     price: '400,000',
-//     currency: 'USDT',
-//     image:
-//       'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop&q=60',
-//   },
-//   {
-//     id: '4',
-//     name: 'Historic Mansion',
-//     location: 'Paris, France',
-//     raisedAmount: 2800000,
-//     targetAmount: 3000000,
-//     price: '750,000',
-//     currency: 'USDT',
-//     image:
-//       'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop&q=60',
-//   },
-//   {
-//     id: '5',
-//     name: 'Waterfront Apartment',
-//     location: 'Miami, USA',
-//     raisedAmount: 580000,
-//     targetAmount: 900000,
-//     price: '320,000',
-//     currency: 'USDT',
-//     image:
-//       'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&auto=format&fit=crop&q=60',
-//   },
-//   {
-//     id: '6',
-//     name: 'Mountain Chalet',
-//     location: 'Swiss Alps',
-//     raisedAmount: 1900000,
-//     targetAmount: 2200000,
-//     price: '550,000',
-//     currency: 'USDT',
-//     image:
-//       'https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=800&auto=format&fit=crop&q=60',
-//   },
-//   {
-//     id: '7',
-//     name: 'Private Island Resort',
-//     location: 'Maldives',
-//     raisedAmount: 3500000,
-//     targetAmount: 5000000,
-//     price: '1,200,000',
-//     currency: 'USDT',
-//     image:
-//       'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=800&auto=format&fit=crop&q=60',
-//   },
-//   {
-//     id: '8',
-//     name: 'Vineyard Estate',
-//     location: 'Tuscany, Italy',
-//     raisedAmount: 1700000,
-//     targetAmount: 2500000,
-//     price: '680,000',
-//     currency: 'USDT',
-//     image:
-//       'https://images.unsplash.com/photo-1523217582562-09d0def993a6?w=800&auto=format&fit=crop&q=60',
-//   },
-// ];
