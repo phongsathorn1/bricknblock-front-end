@@ -3,7 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import logo from '@/assets/icons/pascalwifhat.png';
-import { useWallet } from '@/context/wallet-context';
+import { useState } from 'react';
+import { ethers } from 'ethers';
 
 // Navigation types
 interface NavItem {
@@ -35,7 +36,38 @@ const navigation: NavGroup[] = [
 ];
 
 export const Header = () => {
-  const { address, isConnected, handleConnect } = useWallet();
+  const [address, setAddress] = useState<string | null>(() =>
+    localStorage.getItem('address')
+  );
+  const [isConnected, setIsConnected] = useState(
+    () => localStorage.getItem('isConnected') === 'true'
+  );
+
+  const handleConnect = async () => {
+    if (window.ethereum) {
+      try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send('eth_requestAccounts', []);
+        const signer = provider.getSigner();
+        const userAddress = await signer.getAddress();
+        setAddress(userAddress);
+        setIsConnected(true);
+        localStorage.setItem('address', userAddress);
+        localStorage.setItem('isConnected', 'true');
+      } catch (error) {
+        console.error('Connection error:', error);
+      }
+    } else {
+      console.error('No Ethereum provider found');
+    }
+  };
+
+  const handleDisconnect = () => {
+    setAddress(null);
+    setIsConnected(false);
+    localStorage.removeItem('address');
+    localStorage.removeItem('isConnected');
+  };
 
   return (
     <header className='sticky top-0 z-50 bg-prime-black/90 backdrop-blur-sm border-b border-prime-gold/10'>
@@ -111,7 +143,7 @@ export const Header = () => {
 
         {/* Connect Wallet Button */}
         <button
-          onClick={handleConnect}
+          onClick={isConnected ? handleDisconnect : handleConnect}
           className='px-6 py-2.5 bg-prime-gray border border-prime-gold/20
                          hover:border-prime-gold/40 text-text-primary rounded
                          transition-all duration-300 font-body text-sm uppercase

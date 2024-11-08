@@ -8,8 +8,7 @@ import { GET_RWA_BY_ID, GET_RWA_TOKENS } from '@/lib/graphql/queries';
 import { RWADetailProps } from '@/lib/types/rwa';
 import { formatDistanceToNow, fromUnixTime } from 'date-fns';
 import { formatEther, parseEther, parseUnits } from 'viem';
-import { useState } from 'react';
-import { useAccount, useConnect, useWriteContract } from 'wagmi';
+import { useEffect, useState } from 'react';
 import { FUNDRAISING_ABI, REAL_ESTATE_FUNDRAISING_ABI } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts';
 import { injected } from 'wagmi/connectors';
@@ -93,34 +92,46 @@ const getRWADetail = (
 export default function RWADetail() {
   const [isContractWriting, setIsContractWriting] = useState(false);
   const params = useParams();
-  const { connect } = useConnect();
   const { id } = params;
   const { data, loading, error } = useGraphQuery<SubgraphResponse>(
     GET_RWA_BY_ID(id as string)
   );
+  const [address, setAddress] = useState<string | null>(null);
+
+  useEffect(() => {
+    const storedAddress = localStorage.getItem('address');
+    if (storedAddress) {
+      setAddress(storedAddress);
+    }
+  }, []);
   const [showDetails, setShowDetails] = useState(true);
   const [showAmenities, setShowAmenities] = useState(true);
   const [showInvestModal, setShowInvestModal] = useState(false);
   const [investAmount, setInvestAmount] = useState('');
-  const { data: hash, errors, isPending, writeContract } = useWriteContract();
-  const { address, isConnected } = useAccount();
-
   // Ensure hooks are not conditionally called
   const mockRWADetail = mockRWADetails['1'];
-  const fundraising = data?.fundraisings?.find((f) => f.id === id);
+  const fundraising = data?.fundraisings?.find(
+    (fundraisings: any) => fundraisings.id === id
+  );
 
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
 
   const handleWithdraw = async () => {
     try {
-      const withdrawResult = await writeContract({
-        address: fundraising.address as `0x${string}`,
-        abi: REAL_ESTATE_FUNDRAISING_ABI,
-        functionName: 'withdrawPartial',
-        args: [parseEther(withdrawAmount)], // Use the withdrawal amount from state
-      });
-      console.log('Withdrawal transaction:', withdrawResult);
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+      const contract = new ethers.Contract(
+        fundraising.address as `0x${string}`,
+        REAL_ESTATE_FUNDRAISING_ABI,
+        signer
+      );
+
+      const withdrawTx = await contract.withdrawPartial(
+        parseEther(withdrawAmount)
+      );
+      await withdrawTx.wait();
+      console.log('Withdrawal transaction:', withdrawTx);
       // Add success notification here
     } catch (error) {
       console.error('Withdrawal error:', error);
@@ -130,13 +141,13 @@ export default function RWADetail() {
 
   const handleClaim = async (investmentId: number) => {
     try {
-      const { hash } = await writeContract({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        functionName: 'claimTokens',
-        args: [BigInt(investmentId)],
-      });
-      console.log('Claim transaction:', hash);
+      // const { hash } = await writeContract({
+      //   address: CONTRACT_ADDRESS,
+      //   abi: CONTRACT_ABI,
+      //   functionName: 'claimTokens',
+      //   args: [BigInt(investmentId)],
+      // });
+      // console.log('Claim transaction:', hash);
       // Add success notification here
     } catch (error) {
       console.error('Claim error:', error);
@@ -145,11 +156,11 @@ export default function RWADetail() {
   };
 
   const handleInvest = async () => {
-    if (!isConnected) {
-      console.log('Wallet not connected. Attempting to connect...');
-      connect({ connector: injected() });
-      return;
-    }
+    // if (!isConnected) {
+    //   console.log('Wallet not connected. Attempting to connect...');
+    //   connect({ connector: injected() });
+    //   return;
+    // }
 
     if (!fundraising || !fundraising.address) {
       console.error('Fundraising data or address is missing.');
@@ -157,10 +168,13 @@ export default function RWADetail() {
     }
 
     try {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+
       console.log('Approving USDT to contract...');
-      const approveResult = await writeContract({
-        address: CONTRACT_ADDRESSES.USDT as `0x${string}`, // Replace with actual USDT contract address
-        abi: [
+      const usdtContract = new ethers.Contract(
+        CONTRACT_ADDRESSES.USDT,
+        [
           // ERC20 ABI for approve function
           {
             constant: false,
@@ -173,25 +187,33 @@ export default function RWADetail() {
             type: 'function',
           },
         ],
-        functionName: 'approve',
-        args: [fundraising.address, fundraising.minInvestment], // Approve the minInvestment amount
-      });
+        signer
+      );
 
-      console.log('USDT approved:', approveResult);
+      const approveTx = await usdtContract.approve(
+        fundraising.address,
+        fundraising.minInvestment
+      );
+      await approveTx.wait();
+      console.log('USDT approved:', approveTx);
+
       console.log(
         'Attempting to send invest transaction...',
         fundraising.minInvestment,
         fundraising.address
       );
 
-      const investResult = await writeContract({
-        address: fundraising.address as `0x${string}`,
-        abi: REAL_ESTATE_FUNDRAISING_ABI,
-        functionName: 'invest',
-        args: [parseEther(investAmount)], // Convert investment amount to wei
-      });
+      const fundraisingContract = new ethers.Contract(
+        fundraising.address,
+        REAL_ESTATE_FUNDRAISING_ABI,
+        signer
+      );
 
-      console.log('Invest transaction sent:', investResult);
+      const investTx = await fundraisingContract.invest(
+        parseEther(investAmount)
+      );
+      await investTx.wait();
+      console.log('Invest transaction sent:', investTx);
       alert('Invest transaction sent! Please confirm in MetaMask.');
     } catch (error) {
       console.error('Error during investment:', error);

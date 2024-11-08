@@ -38,17 +38,29 @@ export default function ListedRWA() {
         return parseFloat(value) / Math.pow(10, 18);
       };
 
+      const raisedAmount = fromWei(fundraising.totalRaised);
+      const targetAmount = fromWei(fundraising.goalAmount);
+
+      // Determine status based on raised and target amounts
+      let status = 'In Progress';
+      if (raisedAmount >= targetAmount) {
+        status = 'Completed';
+      } else if (raisedAmount === 0) {
+        status = 'Not Started';
+      }
+
       return {
         id: fundraising.id,
-        name: fundraising.propertyToken?.name || mockItem.name,
-        location: mockItem.location, // Always use mock location since it's not in GQL
-        raisedAmount: fromWei(fundraising.totalRaised),
-        targetAmount: fromWei(fundraising.goalAmount),
-        price: fromWei(fundraising.minInvestment).toString() || mockItem.price,
+        name: fundraising.nft?.name || mockItem.name,
+        location: fundraising.nft?.location || mockItem.location,
+        raisedAmount,
+        targetAmount,
+        price: targetAmount.toString() || mockItem.price,
         currency: 'USDT',
-        image: mockItem.image, // Always use mock image since it's not in GQL
+        image: mockItem.image,
+        status,
       };
-    }) || mockRWAItems; // Fallback to complete mockRWAItems if
+    }) || mockRWAItems;
 
   // Add filtered items logic
   const filteredItems = rwaItems.filter((item) => {

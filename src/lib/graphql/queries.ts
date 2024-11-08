@@ -27,6 +27,21 @@ export const GET_RWA_TOKENS = gql`
         totalSupply
       }
       createdAt
+      nft {
+        id
+        tokenId
+        owner
+        location
+        area
+        propertyType
+        documents
+        isTokenized
+        propertyToken {
+          id
+          name
+          symbol
+        }
+      }
     }
   }
 `;
@@ -58,6 +73,21 @@ export const GET_RWA_BY_ID = (id: string) => gql`
         totalSupply
       }
       createdAt
+      nft {
+        id
+        tokenId
+        owner
+        location
+        area
+        propertyType
+        documents
+        isTokenized
+        propertyToken {
+          id
+          name
+          symbol
+        }
+      }
     }
   }
 `;
