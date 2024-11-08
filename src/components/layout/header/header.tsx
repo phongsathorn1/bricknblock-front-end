@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import logo from '@/assets/icons/pascalwifhat.png';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { useGraphQuery } from '@/lib/hooks/useGraphQL';
 import { GET_RWA_TOKENS } from '@/lib/graphql/queries';
@@ -37,12 +37,16 @@ const navigation: NavGroup[] = [
 ];
 
 export const Header = () => {
-  const [address, setAddress] = useState<string | null>(() =>
-    localStorage.getItem('address')
-  );
-  const [isConnected, setIsConnected] = useState(
-    () => localStorage.getItem('isConnected') === 'true'
-  );
+  const [address, setAddress] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+
+  useEffect(() => {
+    const address = localStorage.getItem('address');
+    const isConnected = localStorage.getItem('isConnected') === 'true';
+    setAddress(address);
+    setIsConnected(isConnected);
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch data using the useGraphQuery hook
