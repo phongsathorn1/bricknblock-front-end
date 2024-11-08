@@ -147,7 +147,7 @@ export default function CreateRWA() {
     }
   }
 
-  const handleApproveNFT = async () => {
+  const handleApproveAndCreateFundraising = async () => {
     if (!nftId) return;
 
     try {
@@ -162,61 +162,37 @@ export default function CreateRWA() {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
 
-      // Create contract instance
-      const contract = new ethers.Contract(
+      // Create NFT contract instance
+      const nftContract = new ethers.Contract(
         CONTRACT_ADDRESSES.NFT,
         NFT_ABI,
         signer
       );
 
-      // Call approve function
-      const approveResult = await contract.approve(
+      // Approve NFT
+      const approveResult = await nftContract.approve(
         CONTRACT_ADDRESSES.FactoryFundraising,
         BigInt(nftId)
       );
 
-      const receipt = await approveResult.wait();
-      console.log('NFT approval transaction receipt:', receipt);
+      const approveReceipt = await approveResult.wait();
+      console.log('NFT approval transaction receipt:', approveReceipt);
 
-      if (receipt.status === 1) {
-        // alert('NFT approval transaction successful!');
-        setCurrentStep(2);
-      } else {
+      if (approveReceipt.status !== 1) {
         console.error('NFT approval transaction failed.');
         alert('NFT approval transaction failed. Check console for details.');
-      }
-    } catch (error) {
-      console.error('Error during approval:', error);
-      alert('Error during approval. Check console for details.');
-    } finally {
-      setIsPending(false); // End loading
-    }
-  };
-
-  const handleCreateFundraising = async () => {
-    if (!nftId) return;
-
-    try {
-      setIsPending(true); // Start loading
-      if (!window.ethereum) {
-        alert('MetaMask is not installed. Please install it to continue.');
         return;
       }
 
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
-
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = provider.getSigner();
-
-      // Create contract instance
-      const contract = new ethers.Contract(
+      // Create Fundraising contract instance
+      const fundraisingContract = new ethers.Contract(
         CONTRACT_ADDRESSES.FactoryFundraising,
         FUNDRAISING_ABI,
         signer
       );
 
-      // Call createFundraising function
-      const fundraisingResult = await contract.createFundraising(
+      // Create Fundraising
+      const fundraisingResult = await fundraisingContract.createFundraising(
         BigInt(nftId),
         parseEther(formData.targetAmount),
         parseEther(formData.minInvestment),
@@ -225,25 +201,25 @@ export default function CreateRWA() {
       );
 
       console.log('Fundraising transaction sent:', fundraisingResult);
-      // alert('Fundraising transaction sent! Please confirm in MetaMask.');
 
-      const receipt = await fundraisingResult.wait();
+      const fundraisingReceipt = await fundraisingResult.wait();
 
-      if (receipt.status === 1) {
-        console.log('Fundraising transaction successful:', receipt);
-        // alert('Fundraising transaction successful!');
-        setFundraisingId(receipt.events[0].address.toLowerCase());
+      if (fundraisingReceipt.status === 1) {
+        console.log('Fundraising transaction successful:', fundraisingReceipt);
+        setFundraisingId(fundraisingReceipt.events[0].address.toLowerCase());
         setCurrentStep(3);
 
         // Show success modal
         setShowSuccessModal(true);
       } else {
-        console.error('Fundraising transaction failed:', receipt);
+        console.error('Fundraising transaction failed:', fundraisingReceipt);
         alert('Fundraising transaction failed. Check console for details.');
       }
     } catch (error) {
-      console.error('Error during fundraising creation:', error);
-      alert('Error during fundraising creation. Check console for details.');
+      console.error('Error during approval and fundraising creation:', error);
+      alert(
+        'Error during approval and fundraising creation. Check console for details.'
+      );
     } finally {
       setIsPending(false); // End loading
     }
@@ -289,25 +265,13 @@ export default function CreateRWA() {
                 currentStep >= 1 ? 'text-prime-gold' : 'text-text-secondary'
               }
             >
-              Approve NFT
-            </span>
-            <span
-              className={
-                currentStep >= 2 ? 'text-prime-gold' : 'text-text-secondary'
-              }
-            >
-              Create Fundraising
+              Approve NFT and Create Fundraising
             </span>
           </div>
           <div className='flex'>
             <div
               className={`flex-1 h-1 ${
                 currentStep >= 1 ? 'bg-prime-gold' : 'bg-text-secondary'
-              }`}
-            ></div>
-            <div
-              className={`flex-1 h-1 ${
-                currentStep >= 2 ? 'bg-prime-gold' : 'bg-text-secondary'
               }`}
             ></div>
           </div>
@@ -584,9 +548,9 @@ export default function CreateRWA() {
 
         {currentStep === 1 && (
           <div>
-            {/* Approve NFT Step */}
+            {/* Approve and Create Fundraising Step */}
             <h2 className='font-display text-xl uppercase tracking-wider text-text-primary'>
-              Approve NFT
+              Approve NFT and Create Fundraising
             </h2>
 
             {/* Display Form Data in a Paper-like Box */}
@@ -639,11 +603,11 @@ export default function CreateRWA() {
               </div>
             </div>
 
-            {/* Form and button for approving NFT */}
+            {/* Form and button for approving NFT and creating fundraising */}
             <div className='mt-4'>
               <button
                 type='button'
-                onClick={handleApproveNFT}
+                onClick={handleApproveAndCreateFundraising}
                 disabled={!isConnected || isPending}
                 className={`w-full px-8 py-4 bg-prime-gray border border-prime-gold/20
                   hover:border-prime-gold/40 text-text-primary rounded
@@ -654,34 +618,9 @@ export default function CreateRWA() {
                       : ''
                   }`}
               >
-                {isPending ? 'Processing...' : 'Approve NFT'}
+                {isPending ? 'Processing...' : 'Approve and Create Fundraising'}
               </button>
             </div>
-          </div>
-        )}
-
-        {currentStep === 2 && (
-          <div>
-            {/* Create Fundraising Step */}
-            <h2 className='font-display text-xl uppercase tracking-wider text-text-primary'>
-              Create Fundraising
-            </h2>
-            {/* Form and button for creating fundraising */}
-            <button
-              type='button'
-              onClick={handleCreateFundraising}
-              disabled={!isConnected || isPending}
-              className={`w-full px-8 py-4 bg-prime-gray border border-prime-gold/20
-                hover:border-prime-gold/40 text-text-primary rounded
-                transition-all duration-300 uppercase tracking-wider
-                ${
-                  !isConnected || isPending
-                    ? 'opacity-50 cursor-not-allowed'
-                    : ''
-                }`}
-            >
-              {isPending ? 'Processing...' : 'Create Fundraising'}
-            </button>
           </div>
         )}
       </div>

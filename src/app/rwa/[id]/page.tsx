@@ -33,8 +33,10 @@ const getRWADetail = (
     return {
       // Basic info from RWACardProps
       id: fundraising.id,
-      name: fundraising.propertyToken?.name || mockDetail.name,
-      location: mockDetail.location,
+      name:
+        fundraising.nft?.location + ' #' + fundraising.nft?.tokenId ||
+        mockDetail.name,
+      location: fundraising.nft?.location || mockDetail.location,
       raisedAmount: fromWei(fundraising.totalRaised),
       targetAmount: fromWei(fundraising.goalAmount),
       price: fromWei(fundraising.minInvestment).toString() || mockDetail.price,
@@ -139,15 +141,23 @@ export default function RWADetail() {
     }
   };
 
-  const handleClaim = async (investmentId: number) => {
+  const handleClaim = async () => {
     try {
-      // const { hash } = await writeContract({
-      //   address: CONTRACT_ADDRESS,
-      //   abi: CONTRACT_ABI,
-      //   functionName: 'claimTokens',
-      //   args: [BigInt(investmentId)],
-      // });
-      // console.log('Claim transaction:', hash);
+      // Set up provider and signer
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+
+      // Create contract instance
+      const contract = new ethers.Contract(
+        fundraising.address as `0x${string}`,
+        REAL_ESTATE_FUNDRAISING_ABI,
+        signer
+      );
+
+      // Call the claimTokens function
+      const transaction = await contract.claimTokens();
+      console.log('Claim transaction:', transaction.hash);
+
       // Add success notification here
     } catch (error) {
       console.error('Claim error:', error);
@@ -569,9 +579,7 @@ export default function RWADetail() {
 
                             {fundraising.isCompleted && !investment.claimed && (
                               <button
-                                onClick={() =>
-                                  handleClaim(parseInt(investment.id))
-                                }
+                                onClick={() => handleClaim()}
                                 disabled={isContractWriting}
                                 className='px-3 py-1 bg-prime-gold/20 text-prime-gold rounded-full
                                          hover:bg-prime-gold/30 transition-colors duration-300 text-sm

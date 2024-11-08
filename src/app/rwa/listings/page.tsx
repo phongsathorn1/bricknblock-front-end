@@ -51,7 +51,9 @@ export default function ListedRWA() {
 
       return {
         id: fundraising.id,
-        name: fundraising.nft?.name || mockItem.name,
+        name:
+          fundraising.nft?.location + ' #' + fundraising.nft?.tokenId ||
+          mockItem.name,
         location: fundraising.nft?.location || mockItem.location,
         raisedAmount,
         targetAmount,
