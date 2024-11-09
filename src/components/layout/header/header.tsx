@@ -32,7 +32,7 @@ const navigation: NavGroup[] = [
     label: 'DAO',
     items: [
       { label: 'My DAO', href: '/dao/my-dao' },
-      { label: 'Featured DAO', href: '/dao/featured' },
+      // { label: 'Featured DAO', href: '/dao/featured' },
     ],
   },
 ];
