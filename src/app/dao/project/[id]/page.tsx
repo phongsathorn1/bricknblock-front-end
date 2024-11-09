@@ -257,7 +257,7 @@ export default function DAO() {
   };
 
   const handleClaimDividend = async (dividendIndex: number) => {
-    alert(dividendIndex);
+    // alert(dividendIndex);
     setClaiming(dividendIndex);
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();

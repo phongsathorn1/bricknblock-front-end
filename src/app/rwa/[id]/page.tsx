@@ -257,7 +257,7 @@ export default function RWADetail() {
       const transaction = await contract.claimTokens();
       console.log('Claim transaction:', transaction.hash);
       await transaction.wait(); // Wait for the transaction to be confirmed
-      alert('Starting delegation...');
+      // alert('Starting delegation...');
       const DelegateContract = new ethers.Contract(
         fundraising.nft?.propertyToken?.id,
         PROPERTY_TOKEN_ABI,
@@ -268,7 +268,7 @@ export default function RWADetail() {
         signer.getAddress()
       );
       const delegateReceipt = await delegateResult.wait();
-      alert('Delegation completed!');
+      // alert('Delegation completed!');
       console.log('Delegate receipt:', delegateReceipt);
       refetchData(); // Refetch data after transaction confirmation
       // Add success notification here
