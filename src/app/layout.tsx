@@ -4,8 +4,6 @@ import { Layout } from '@/components/layout/layout'; // Add this import
 import './globals.css';
 import { Space_Grotesk } from 'next/font/google';
 
-// import { Providers } from '@/components/providers/wagmi-provider';
-
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
   variable: '--font-geist-sans',

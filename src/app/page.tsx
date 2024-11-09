@@ -5,6 +5,9 @@ import { RWACardProps } from '@/lib/types/rwa';
 import Image from 'next/image';
 import Link from 'next/link';
 
+import { GET_RWA_TOKENS } from '@/lib/graphql/queries';
+import { useGraphQuery } from '@/lib/hooks/useGraphQL';
+
 // Featured RWA component with larger display
 const FeaturedRWA = ({ item }: { item: RWACardProps }) => {
   return (
@@ -82,8 +85,48 @@ const FeaturedRWA = ({ item }: { item: RWACardProps }) => {
 };
 
 export default function Home() {
+  const { data, loading, error } =
+    useGraphQuery<SubgraphResponse>(GET_RWA_TOKENS);
   // Get 3 random items from mockRWAItems
-  const featuredItems = [...mockRWAItems]
+  const rwaItems: RWACardProps[] =
+    data?.fundraisings?.map((fundraising: any) => {
+      // Find matching mock item for fallback data
+      const mockItem =
+        mockRWAItems[Math.floor(Math.random() * mockRWAItems.length)];
+
+      // Helper function to convert from wei (18 decimals)
+      const fromWei = (value: string | null | undefined) => {
+        if (!value) return 0;
+        return parseFloat(value) / Math.pow(10, 18);
+      };
+
+      const raisedAmount = fromWei(fundraising.totalRaised);
+      const targetAmount = fromWei(fundraising.goalAmount);
+
+      // Determine status based on raised and target amounts
+      let status = 'In Progress';
+      if (raisedAmount >= targetAmount) {
+        status = 'Completed';
+      } else if (raisedAmount === 0) {
+        status = 'Not Started';
+      }
+
+      return {
+        id: fundraising.id,
+        name:
+          fundraising.nft?.location + ' #' + fundraising.nft?.tokenId ||
+          mockItem.name,
+        location: fundraising.nft?.location || mockItem.location,
+        raisedAmount,
+        targetAmount,
+        price: targetAmount.toString() || mockItem.price,
+        currency: 'USDT',
+        image: mockItem.image,
+        status,
+        type: fundraising.nft?.propertyType || mockItem.type,
+      };
+    }) || mockRWAItems;
+  const featuredItems = [...rwaItems]
     .sort(() => Math.random() - 0.5)
     .slice(0, 3);
 

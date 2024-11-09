@@ -3,10 +3,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import logo from '@/assets/icons/pascalwifhat.png';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { ethers } from 'ethers';
 import { useGraphQuery } from '@/lib/hooks/useGraphQL';
 import { GET_RWA_TOKENS } from '@/lib/graphql/queries';
+import Loading from '../loading/loading';
 // Navigation types
 interface NavItem {
   label: string;
@@ -37,16 +38,12 @@ const navigation: NavGroup[] = [
 ];
 
 export const Header = () => {
-  const [address, setAddress] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-
-  useEffect(() => {
-    const address = localStorage.getItem('address');
-    const isConnected = localStorage.getItem('isConnected') === 'true';
-    setAddress(address);
-    setIsConnected(isConnected);
-  }, []);
-
+  const [address, setAddress] = useState<string | null>(() =>
+    localStorage.getItem('address')
+  );
+  const [isConnected, setIsConnected] = useState(
+    () => localStorage.getItem('isConnected') === 'true'
+  );
   const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch data using the useGraphQuery hook
@@ -61,9 +58,7 @@ export const Header = () => {
   }, [data, searchQuery]);
 
   // Handle loading and error states
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  if (loading) return <Loading />;
 
   if (error) {
     console.error('Error fetching RWA tokens:', error);

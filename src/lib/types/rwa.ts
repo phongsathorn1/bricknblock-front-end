@@ -10,6 +10,7 @@ export interface RWACardProps {
 }
 
 export interface RWADetailProps extends RWACardProps {
+  status: string;
   description: string;
   amenities: string[];
   details: {

@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { GET_PROPOSALS } from '@/lib/graphql/queries';
 import { useGraphQuery } from '@/lib/hooks/useGraphQL';
+import Loading from '@/components/layout/loading/loading';
 
 export type Proposal = {
   id: string;
@@ -32,11 +33,19 @@ export type Proposal = {
   target: string;
 };
 
-const ProposalCard = ({ proposal, projectId }: { proposal: Proposal, projectId: string }) => {
+const ProposalCard = ({
+  proposal,
+  projectId,
+}: {
+  proposal: Proposal;
+  projectId: string;
+}) => {
   const parsedDescription = JSON.parse(proposal.description);
   const totalVotes = Number(proposal.forVotes) + Number(proposal.againstVotes);
-  const forPercentage = totalVotes > 0 ? (Number(proposal.forVotes) / totalVotes) * 100 : 0;
-  const againstPercentage = totalVotes > 0 ? (Number(proposal.againstVotes) / totalVotes) * 100 : 0;
+  const forPercentage =
+    totalVotes > 0 ? (Number(proposal.forVotes) / totalVotes) * 100 : 0;
+  const againstPercentage =
+    totalVotes > 0 ? (Number(proposal.againstVotes) / totalVotes) * 100 : 0;
 
   const getStatus = (state: number) => {
     switch (state) {
@@ -85,7 +94,9 @@ const ProposalCard = ({ proposal, projectId }: { proposal: Proposal, projectId: 
             <span>Author: {proposal.proposer}</span>
           </div>
         </div>
-        <div className={`px-3 py-1 rounded-full text-sm ${getStatusColor(status)}`}>
+        <div
+          className={`px-3 py-1 rounded-full text-sm ${getStatusColor(status)}`}
+        >
           {status}
         </div>
       </div>
@@ -95,7 +106,9 @@ const ProposalCard = ({ proposal, projectId }: { proposal: Proposal, projectId: 
       <div className='space-y-2'>
         <div className='flex justify-between text-sm text-text-secondary mb-1'>
           <span>For</span>
-          <span>{forPercentage.toFixed(1)}% ({Number(proposal.forVotes)})</span>
+          <span>
+            {forPercentage.toFixed(1)}% ({Number(proposal.forVotes)})
+          </span>
         </div>
         <div className='h-2 bg-prime-black/50 rounded-full overflow-hidden'>
           <div
@@ -106,7 +119,9 @@ const ProposalCard = ({ proposal, projectId }: { proposal: Proposal, projectId: 
 
         <div className='flex justify-between text-sm text-text-secondary mb-1'>
           <span>Against</span>
-          <span>{againstPercentage.toFixed(1)}% ({Number(proposal.againstVotes)})</span>
+          <span>
+            {againstPercentage.toFixed(1)}% ({Number(proposal.againstVotes)})
+          </span>
         </div>
         <div className='h-2 bg-prime-black/50 rounded-full overflow-hidden'>
           <div
@@ -146,11 +161,11 @@ export default function DAO() {
         return 'pending';
     }
   };
-  const { data, loading, error } =
-    useGraphQuery<{ proposals: Proposal[] }>(GET_PROPOSALS(projectId as string));
+  const { data, loading, error } = useGraphQuery<{ proposals: Proposal[] }>(
+    GET_PROPOSALS(projectId as string)
+  );
 
-
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <Loading />;
   if (error) return <div>Error: {error.message}</div>;
 
   const filteredProposals = data?.proposals.filter((proposal) =>
@@ -185,19 +200,25 @@ export default function DAO() {
         <div className='flex gap-4 mb-8'>
           <button
             onClick={() => setFilter('all')}
-            className={`btn-prime ${filter === 'all' ? 'border-prime-gold' : ''}`}
+            className={`btn-prime ${
+              filter === 'all' ? 'border-prime-gold' : ''
+            }`}
           >
             All Proposals
           </button>
           <button
             onClick={() => setFilter('active')}
-            className={`btn-prime ${filter === 'active' ? 'border-prime-gold' : ''}`}
+            className={`btn-prime ${
+              filter === 'active' ? 'border-prime-gold' : ''
+            }`}
           >
             Active
           </button>
           <button
             onClick={() => setFilter('closed')}
-            className={`btn-prime ${filter === 'closed' ? 'border-prime-gold' : ''}`}
+            className={`btn-prime ${
+              filter === 'closed' ? 'border-prime-gold' : ''
+            }`}
           >
             Closed
           </button>
@@ -207,7 +228,11 @@ export default function DAO() {
         {filteredProposals && (
           <div className='grid grid-cols-1 gap-6'>
             {filteredProposals.map((proposal) => (
-              <ProposalCard key={proposal.id} proposal={proposal} projectId={projectId as string} />
+              <ProposalCard
+                key={proposal.id}
+                proposal={proposal}
+                projectId={projectId as string}
+              />
             ))}
           </div>
         )}

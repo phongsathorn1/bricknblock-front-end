@@ -10,7 +10,6 @@ import { CONTRACT_ADDRESSES } from '@/constants/contracts';
 import { ethers } from 'ethers';
 
 export default function CreateRWA() {
-  // const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);

@@ -9,11 +9,14 @@ import { RWADetailProps } from '@/lib/types/rwa';
 import { formatDistanceToNow, fromUnixTime } from 'date-fns';
 import { formatEther, parseEther, parseUnits } from 'viem';
 import { useEffect, useState } from 'react';
-import { FUNDRAISING_ABI, REAL_ESTATE_FUNDRAISING_ABI } from '@/constants/abi';
+import { REAL_ESTATE_FUNDRAISING_ABI } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts';
-import { injected } from 'wagmi/connectors';
 import { ethers } from 'ethers';
 import bscscanLogo from '@/assets/icons/bscscan-logo.png';
+import Loading from '@/components/layout/loading/loading';
+import React from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const getRWADetail = (
   fundraising: any,
@@ -96,9 +99,19 @@ export default function RWADetail() {
   const [isContractWriting, setIsContractWriting] = useState(false);
   const params = useParams();
   const { id } = params;
+  const [refetchTrigger, setRefetchTrigger] = useState(false);
+
   const { data, loading, error } = useGraphQuery<SubgraphResponse>(
-    GET_RWA_BY_ID(id as string)
+    GET_RWA_BY_ID(id as string),
+    { refetchTrigger }
   );
+
+  // const refetchData = () => {
+  //   console.log('refetching data');
+  //   setRefetchTrigger(!refetchTrigger);
+  // };
+
+  console.log('data', data);
 
   const [address, setAddress] = useState<string | null>(null);
 
@@ -120,6 +133,11 @@ export default function RWADetail() {
 
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  const [isExtendingDeadline, setIsExtendingDeadline] = useState(false);
 
   const handleWithdraw = async () => {
     try {
@@ -164,6 +182,64 @@ export default function RWADetail() {
     } catch (error) {
       console.error('Claim error:', error);
       // Add error notification here
+    }
+  };
+
+  const handleExtendDeadline = async () => {
+    if (!selectedDate) {
+      alert('Please select a date.');
+      return;
+    }
+
+    try {
+      setIsExtendingDeadline(true); // Set loading state to true
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+      const contract = new ethers.Contract(
+        fundraising.address as `0x${string}`,
+        REAL_ESTATE_FUNDRAISING_ABI,
+        signer
+      );
+
+      const currentDeadline = parseInt(fundraising.deadline);
+
+      // Calculate additional days from the current deadline
+      const newTimestamp = Math.floor(selectedDate.getTime() / 1000);
+      const additionalDays = Math.ceil(
+        (newTimestamp - currentDeadline) / (24 * 60 * 60)
+      );
+      const currentTimestamp = Math.floor(Date.now() / 1000);
+      console.log('newTimestamp', newTimestamp);
+      console.log('currentTimestamp', currentTimestamp);
+      console.log('additionalDays', additionalDays);
+
+      if (newTimestamp <= currentTimestamp) {
+        alert('Selected date must be in the future.');
+        setIsExtendingDeadline(false); // Reset loading state
+        return;
+      }
+      if (additionalDays <= 0) {
+        alert(
+          'Selected date must be in the future relative to the current deadline.'
+        );
+        setIsExtendingDeadline(false); // Reset loading state
+        return;
+      }
+
+      const tx = await contract.extendDeadline(additionalDays);
+      await tx.wait();
+      console.log('Deadline extended transaction:', tx);
+
+      // Fetch the status again after transaction success
+      // Assuming you have a function to refetch the data
+      // refetchData();
+
+      // Add success notification here
+    } catch (error) {
+      console.error('Error extending deadline:', error);
+      // Add error notification here
+    } finally {
+      setIsExtendingDeadline(false); // Reset loading state
     }
   };
 
@@ -259,7 +335,7 @@ export default function RWADetail() {
     return <div>Property not found</div>;
   }
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <Loading />;
   if (error) return <div>Error loading data</div>;
 
   // Combine real and mock data with null check
@@ -437,11 +513,13 @@ export default function RWADetail() {
                     address?.toLowerCase() ===
                       fundraising.owner.toLowerCase() && (
                       <button
-                        onClick={() => alert('Expired action')}
+                        onClick={() => setShowDatePicker(true)}
                         className='absolute top-2 right-2 px-2 py-1 bg-red-500/20 text-red-400 rounded-full 
                                  hover:bg-red-500/30 transition-colors duration-300 text-xs'
                       >
-                        Expired Action
+                        {isExtendingDeadline
+                          ? 'Extending...'
+                          : 'Extend Deadline'}
                       </button>
                     )}
                 </div>
@@ -476,13 +554,17 @@ export default function RWADetail() {
             {/* Action Button - Fixed at bottom */}
             <div className='mt-6'>
               <button
-                disabled={fundraising.isCompleted}
+                disabled={
+                  fundraising.isCompleted || isExpired(fundraising.deadline)
+                }
                 onClick={() =>
-                  !fundraising.isCompleted && setShowInvestModal(true)
+                  !fundraising.isCompleted &&
+                  !isExpired(fundraising.deadline) &&
+                  setShowInvestModal(true)
                 }
                 className={`w-full px-8 py-4 bg-gradient-to-r 
                   ${
-                    fundraising.isCompleted
+                    fundraising.isCompleted || isExpired(fundraising.deadline)
                       ? 'from-gray-400 to-gray-500 cursor-not-allowed'
                       : 'from-prime-gold to-prime-gold/80 hover:from-prime-gold/90 hover:to-prime-gold/70'
                   }
@@ -491,6 +573,8 @@ export default function RWADetail() {
               >
                 {fundraising.isCompleted
                   ? 'Fundraising Completed'
+                  : isExpired(fundraising.deadline)
+                  ? 'Fundraising Expired'
                   : 'Invest Now'}
               </button>
             </div>
@@ -961,6 +1045,39 @@ export default function RWADetail() {
             >
               Confirm Withdrawal
             </button>
+          </div>
+        </div>
+      )}
+
+      {showDatePicker && (
+        <div className='fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50'>
+          <div className='bg-prime-gray rounded-lg p-6 max-w-md w-full'>
+            <h3 className='text-xl font-display uppercase tracking-wider text-text-primary mb-4'>
+              Select New Deadline
+            </h3>
+            <DatePicker
+              selected={selectedDate}
+              onChange={(date: Date) => setSelectedDate(date)}
+              dateFormat='yyyy/MM/dd'
+              className='w-full px-4 py-2 bg-prime-black border border-prime-gold/10 rounded text-text-primary'
+            />
+            <div className='flex justify-end mt-4'>
+              <button
+                onClick={() => setShowDatePicker(false)}
+                className='px-4 py-2 bg-gray-500 text-white rounded mr-2'
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  handleExtendDeadline();
+                  setShowDatePicker(false);
+                }}
+                className='px-4 py-2 bg-prime-gold text-prime-black rounded'
+              >
+                Confirm
+              </button>
+            </div>
           </div>
         </div>
       )}

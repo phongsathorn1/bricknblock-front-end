@@ -288,47 +288,63 @@ export const REAL_ESTATE_FUNDRAISING_ABI = [
     stateMutability: 'nonpayable',
     type: 'function',
   },
-  // ... other functions ...
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: 'additionalDays',
+        type: 'uint256',
+      },
+    ],
+    name: 'extendDeadline',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
 ];
 export const DAO_PROPOSALS_ABI = [
   {
     inputs: [
       { internalType: 'address', name: 'propertyToken', type: 'address' },
       { internalType: 'string', name: 'description', type: 'string' },
-      { internalType: 'enum PropertyGovernance.ProposalType', name: 'proposalType', type: 'uint8' },
+      {
+        internalType: 'enum PropertyGovernance.ProposalType',
+        name: 'proposalType',
+        type: 'uint8',
+      },
       { internalType: 'bytes', name: 'callData', type: 'bytes' },
-      { internalType: 'address', name: 'target', type: 'address' }
+      { internalType: 'address', name: 'target', type: 'address' },
     ],
     name: 'propose',
     outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       { internalType: 'address', name: 'propertyToken', type: 'address' },
       { internalType: 'uint256', name: 'proposalId', type: 'uint256' },
-      { internalType: 'bool', name: 'support', type: 'bool' }
+      { internalType: 'bool', name: 'support', type: 'bool' },
     ],
     name: 'castVote',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       { internalType: 'address', name: 'propertyToken', type: 'address' },
-      { internalType: 'uint256', name: 'proposalId', type: 'uint256' }
+      { internalType: 'uint256', name: 'proposalId', type: 'uint256' },
     ],
     name: 'executeProposal',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       { internalType: 'address', name: 'propertyToken', type: 'address' },
-      { internalType: 'uint256', name: 'proposalId', type: 'uint256' }
+      { internalType: 'uint256', name: 'proposalId', type: 'uint256' },
     ],
     name: 'getProposal',
     outputs: [
@@ -342,80 +358,98 @@ export const DAO_PROPOSALS_ABI = [
           { internalType: 'uint256', name: 'forVotes', type: 'uint256' },
           { internalType: 'uint256', name: 'againstVotes', type: 'uint256' },
           { internalType: 'bool', name: 'executed', type: 'bool' },
-          { internalType: 'enum PropertyGovernance.ProposalType', name: 'proposalType', type: 'uint8' },
-          { internalType: 'address', name: 'target', type: 'address' }
+          {
+            internalType: 'enum PropertyGovernance.ProposalType',
+            name: 'proposalType',
+            type: 'uint8',
+          },
+          { internalType: 'address', name: 'target', type: 'address' },
         ],
         internalType: 'struct PropertyGovernance.Proposal',
         name: '',
-        type: 'tuple'
-      }
+        type: 'tuple',
+      },
     ],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       { internalType: 'address', name: 'propertyToken', type: 'address' },
-      { internalType: 'uint256', name: 'proposalId', type: 'uint256' }
+      { internalType: 'uint256', name: 'proposalId', type: 'uint256' },
     ],
     name: 'getProposalState',
-    outputs: [{ internalType: 'enum PropertyGovernance.ProposalState', name: '', type: 'uint8' }],
+    outputs: [
+      {
+        internalType: 'enum PropertyGovernance.ProposalState',
+        name: '',
+        type: 'uint8',
+      },
+    ],
     stateMutability: 'view',
-    type: 'function'
-  }
-]
+    type: 'function',
+  },
+];
 
 export const PROPERTY_TOKEN_ABI = [
   {
     inputs: [
       { internalType: 'string', name: 'name', type: 'string' },
       { internalType: 'string', name: 'symbol', type: 'string' },
-      { internalType: 'address', name: '_fundraisingContract', type: 'address' },
-      { internalType: 'address', name: '_factoryFundraisingDao', type: 'address' },
-      { internalType: 'address', name: '_propertyGovernance', type: 'address' }
+      {
+        internalType: 'address',
+        name: '_fundraisingContract',
+        type: 'address',
+      },
+      {
+        internalType: 'address',
+        name: '_factoryFundraisingDao',
+        type: 'address',
+      },
+      { internalType: 'address', name: '_propertyGovernance', type: 'address' },
     ],
     stateMutability: 'nonpayable',
-    type: 'constructor'
+    type: 'constructor',
   },
   {
     inputs: [{ internalType: 'address', name: 'account', type: 'address' }],
     name: 'balanceOf',
     outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [{ internalType: 'address', name: 'delegatee', type: 'address' }],
     name: 'delegate',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [{ internalType: 'address', name: 'account', type: 'address' }],
     name: 'getVotes',
     outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
     stateMutability: 'view',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       { internalType: 'address', name: 'to', type: 'address' },
-      { internalType: 'uint256', name: 'amount', type: 'uint256' }
+      { internalType: 'uint256', name: 'amount', type: 'uint256' },
     ],
     name: 'mint',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function'
+    type: 'function',
   },
   {
     inputs: [
       { internalType: 'address', name: 'to', type: 'address' },
-      { internalType: 'uint256', name: 'value', type: 'uint256' }
+      { internalType: 'uint256', name: 'value', type: 'uint256' },
     ],
     name: 'transfer',
     outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
     stateMutability: 'nonpayable',
-    type: 'function'
-  }
-]
+    type: 'function',
+  },
+];
