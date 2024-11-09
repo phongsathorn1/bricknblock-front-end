@@ -178,6 +178,10 @@ export const GET_PROPOSAL_BY_ID = (proposalId: string) => gql`
         name
         symbol
       }
+      fundraisingDao {
+        address
+        goalAmount
+      }
     }
   }
 `;
