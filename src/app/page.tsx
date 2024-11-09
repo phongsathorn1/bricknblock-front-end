@@ -7,19 +7,26 @@ import Link from 'next/link';
 
 import { GET_RWA_TOKENS } from '@/lib/graphql/queries';
 import { useGraphQuery } from '@/lib/hooks/useGraphQL';
+import { useState } from 'react';
 
 // Featured RWA component with larger display
 const FeaturedRWA = ({ item }: { item: RWACardProps }) => {
+  const [imageSrc, setImageSrc] = useState(item.image);
   return (
     <Link
       href={`/rwa/${item.id}`}
       className='group relative h-[500px] overflow-hidden rounded-xl'
     >
       <Image
-        src={item.image}
+        src={imageSrc}
         alt={item.name}
         fill
         className='object-cover transition-transform duration-700 group-hover:scale-105'
+        onError={() =>
+          setImageSrc(
+            'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800&auto=format&fit=crop&q=60'
+          )
+        }
       />
       {/* Gradient Overlay */}
       <div className='absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent' />
@@ -112,14 +119,15 @@ export default function Home() {
       return {
         id: fundraising.id,
         name:
-          fundraising.nft?.location + ' #' + fundraising.nft?.tokenId ||
+          fundraising.nft?.name + ' #' + fundraising.nft?.tokenId ||
           mockItem.name,
         location: fundraising.nft?.location || mockItem.location,
         raisedAmount,
         targetAmount,
         price: targetAmount.toString() || mockItem.price,
         currency: 'USDT',
-        image: mockItem.image,
+        image:
+          'https://ipfs.io/ipfs/' + fundraising.nft?.image || mockItem.image,
         status,
         type: fundraising.nft?.propertyType || mockItem.type,
       };

@@ -452,7 +452,9 @@ export default function RWADetail() {
     }
   };
 
-  const [imageSrc, setImageSrc] = useState('');
+  const [imageSrc, setImageSrc] = useState(
+    'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800&auto=format&fit=crop&q=60'
+  );
 
   // Combine real and mock data with null check
   const rwaDetail = fundraising
