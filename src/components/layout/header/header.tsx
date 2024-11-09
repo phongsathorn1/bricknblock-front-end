@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import logo from '@/assets/icons/pascalwifhat.png';
+import logo from '@/assets/icons/brickNBlock.png';
 import { useState, useMemo } from 'react';
 import { ethers } from 'ethers';
 import { useGraphQuery } from '@/lib/hooks/useGraphQL';
@@ -106,7 +106,7 @@ export const Header = () => {
             className='opacity-90'
           />
           <span className='font-display text-xl tracking-wider uppercase text-text-primary'>
-            pascalwifhat
+            BrickNBlock
           </span>
         </Link>
 

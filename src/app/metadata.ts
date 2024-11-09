@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'PascalWifhat',
+  title: 'BrickNBlock',
   description: 'Premium Real World Asset Investment Platform',
 };
