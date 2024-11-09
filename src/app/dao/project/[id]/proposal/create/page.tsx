@@ -178,7 +178,7 @@ export default function CreateProposal() {
       //   console.log('Delegate result:', delegateResult);
 
       //   const delegateReceipt = await delegateResult.wait();
-      console.log('Delegate receipt:', delegateReceipt);
+      //   console.log('Delegate receipt:', delegateReceipt);
 
       setWaitingMessage('Creating proposal...');
       const proposalResult = await PropertyGovernanceContract.propose(
