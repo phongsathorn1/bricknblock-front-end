@@ -24,6 +24,7 @@ export default function CreateRWA() {
     documents: '',
     minInvestment: '',
     maxInvestment: '',
+    durationDays: '',
   });
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -62,9 +63,17 @@ export default function CreateRWA() {
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
+    const { name, value } = e.target;
+
+    setFormData((prevData) => {
+      const updatedData = { ...prevData, [name]: value };
+
+      // Automatically set maxInvestment to targetAmount if targetAmount changes
+      if (name === 'targetAmount') {
+        updatedData.maxInvestment = value;
+      }
+
+      return updatedData;
     });
   };
 
@@ -196,7 +205,7 @@ export default function CreateRWA() {
         parseEther(formData.targetAmount),
         parseEther(formData.minInvestment),
         parseEther(formData.maxInvestment),
-        BigInt(30)
+        BigInt(formData.durationDays)
       );
 
       console.log('Fundraising transaction sent:', fundraisingResult);
@@ -402,7 +411,7 @@ export default function CreateRWA() {
               </div>
 
               {/* Additional Fields */}
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+              <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
                 <div className='space-y-2'>
                   <label className='block text-sm uppercase tracking-wider text-text-secondary'>
                     Area (sq ft)
@@ -434,6 +443,23 @@ export default function CreateRWA() {
                              focus:outline-none focus:border-prime-gold/30
                              transition-all duration-300'
                     placeholder='e.g., IPFS hash or document references'
+                    required
+                  />
+                </div>
+                <div className='space-y-2'>
+                  <label className='block text-sm uppercase tracking-wider text-text-secondary'>
+                    Duration (Days)
+                  </label>
+                  <input
+                    type='number'
+                    name='durationDays'
+                    value={formData.durationDays}
+                    onChange={handleInputChange}
+                    className='w-full px-4 py-3 bg-prime-gray border border-prime-gold/10 
+                             rounded text-text-primary placeholder-text-secondary/50
+                             focus:outline-none focus:border-prime-gold/30
+                             transition-all duration-300'
+                    placeholder='e.g., 30'
                     required
                   />
                 </div>

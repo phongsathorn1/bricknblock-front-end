@@ -107,8 +107,6 @@ export default function Home() {
       let status = 'In Progress';
       if (raisedAmount >= targetAmount) {
         status = 'Completed';
-      } else if (raisedAmount === 0) {
-        status = 'Not Started';
       }
 
       return {

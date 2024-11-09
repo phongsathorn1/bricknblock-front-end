@@ -53,8 +53,6 @@ export default function ListedRWA() {
         status = 'Completed';
       } else if (isExpired(fundraising.deadline)) {
         status = 'Expired';
-      } else if (raisedAmount === 0) {
-        status = 'Not Started';
       }
 
       return {
