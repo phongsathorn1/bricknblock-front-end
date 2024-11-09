@@ -153,49 +153,49 @@ const VoteModal = ({
 
 const FundraisingDaoBlock = ({
     setIsFundModalOpen,
-    factoryFundraisingDaoAddress,
-    setFactoryFundraisingDaoAddress
+    factoryFundraisingDaoAddress
 }: {
     setIsFundModalOpen: any,
-    factoryFundraisingDaoAddress: string,
-    setFactoryFundraisingDaoAddress: any
+    factoryFundraisingDaoAddress: string
 }) => {
-    const [signer, setSigner] = useState<ethers.Signer | null>(null);
-    const [isConnected, setIsConnected] = useState(false);
+    // const [signer, setSigner] = useState<ethers.Signer | null>(null);
+    // const [isConnected, setIsConnected] = useState(false);
 
-    useEffect(() => {
-        if (window.ethereum) {
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
+    // useEffect(() => {
+    //     if (window.ethereum) {
+    //         const provider = new ethers.providers.Web3Provider(window.ethereum);
 
-            provider.listAccounts().then(async (accounts) => {
-                if (accounts.length > 0) {
-                    setIsConnected(true);
-                    setSigner(provider.getSigner());
-                }
-            });
-        }
-    }, []);
+    //         provider.listAccounts().then(async (accounts) => {
+    //             if (accounts.length > 0) {
+    //                 setIsConnected(true);
+    //                 setSigner(provider.getSigner());
+    //             }
+    //         });
+    //     }
+    // }, []);
 
-    useEffect(() => {
-        const getFactoryFundraisingDaoAddress = async () => {
-            if (!signer) return;
-            const factoryFundraisingDaoContract = new ethers.Contract(
-                CONTRACT_ADDRESSES.FactoryFundraisingDao,
-                FUNDRAISING_FACTORY_DAO_ABI,
-                signer
-            );
+    // useEffect(() => {
+    // const getFactoryFundraisingDaoAddress = async () => {
+    // if (!signer) return;
+    // const factoryFundraisingDaoContract = new ethers.Contract(
+    //     CONTRACT_ADDRESSES.FactoryFundraisingDao,
+    //     FUNDRAISING_FACTORY_DAO_ABI,
+    //     signer
+    // );
 
-            const _factoryFundraisingDaoAddress = await factoryFundraisingDaoContract.allFundraisingDaoContracts(0)
+    // const _factoryFundraisingDaoAddress = await factoryFundraisingDaoContract.allFundraisingDaoContracts(0)
 
-            setFactoryFundraisingDaoAddress(_factoryFundraisingDaoAddress);
-            console.log('factoryFundraisingDaoAddress:', factoryFundraisingDaoAddress);
-        }
+    // setFactoryFundraisingDaoAddress(_factoryFundraisingDaoAddress);
+    // console.log('factoryFundraisingDaoAddress:', factoryFundraisingDaoAddress);
+    // }
 
-        getFactoryFundraisingDaoAddress();
-    }, [signer]);
+    //     getFactoryFundraisingDaoAddress();
+    // }, [signer]);
 
     const { data, loading, error, refetch } =
         useGraphQuery<{ fundraisingDao: FundraisingDao }>(GET_FUNDRAISING_DAO_BY_ID(factoryFundraisingDaoAddress?.toLowerCase() || ''));
+
+    console.log('fundraisingDao', data)
 
     return (
         data?.fundraisingDao && (
@@ -413,6 +413,12 @@ export default function ProposalPage() {
 
     const { data, loading, error, refetch } =
         useGraphQuery<{ proposal: Proposal }>(GET_PROPOSAL_BY_ID(params.proposal_id as string));
+
+    useEffect(() => {
+        if (data?.proposal.fundraisingDao) {
+            setFactoryFundraisingDaoAddress(data.proposal.fundraisingDao.address);
+        }
+    }, [data]);
 
     useEffect(() => {
         const getStatus = async () => {

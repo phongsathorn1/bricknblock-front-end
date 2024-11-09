@@ -31,6 +31,10 @@ export type Proposal = {
   proposalSnapshot: string;
   proposalType: number;
   target: string;
+  fundraisingDao: {
+    address: string;
+    goalAmount: string;
+  };
 };
 
 const ProposalCard = ({
