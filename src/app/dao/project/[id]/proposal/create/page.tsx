@@ -44,9 +44,32 @@ enum ProposalType {
     Fundraising = 3
 }
 
+const WaitingModal = ({
+    isOpen,
+    message
+}: {
+    isOpen: boolean;
+    message: string;
+}) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+            <div className="bg-stone-800 border border-prime-gray/30 rounded-lg p-6 w-full max-w-lg">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-prime-gold border-t-transparent"></div>
+                    <p className="text-text-primary">{message}</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export default function CreateProposal() {
     const [isConnected, setIsConnected] = useState(false);
     const [isPending, setIsPending] = useState(false);
+    const [isWaitingModalOpen, setIsWaitingModalOpen] = useState(false);
+    const [waitingMessage, setWaitingMessage] = useState('');
 
     useEffect(() => {
         if (window.ethereum) {
@@ -119,17 +142,21 @@ export default function CreateProposal() {
                             ['uint256', 'uint256', 'uint256', 'uint256'],
                             [ethers.utils.parseEther(data.goalAmount), ethers.utils.parseEther(data.minInvestment), ethers.utils.parseEther(data.maxInvestment), parseInt(data.durationDays)]
                         );
+                        console.log('callDataPayload', callDataPayload);
                     }
                 }
-                return '0x';
+                return callDataPayload;
             };
 
+            setIsWaitingModalOpen(true);
+            setWaitingMessage('Delegating voting power...');
             const delegateResult = await DelegateContract.delegate(signer.getAddress());
+            console.log('Delegate result:', delegateResult);
 
             const delegateReceipt = await delegateResult.wait();
-
             console.log('Delegate receipt:', delegateReceipt);
 
+            setWaitingMessage('Creating proposal...');
             const proposalResult = await PropertyGovernanceContract.propose(
                 projectId,
                 JSON.stringify({ title: data.title, detail: data.detail }),
@@ -137,17 +164,18 @@ export default function CreateProposal() {
                 getCallData(data.type),
                 data.proposalType === ProposalType.OnChain ? data.targetAddress : '0x0000000000000000000000000000000000000000'
             );
-
             console.log('Proposal result:', proposalResult);
 
+            setWaitingMessage('Waiting for confirmation...');
             const receipt = await proposalResult.wait();
-
             console.log('Receipt:', receipt);
 
         } catch (error) {
             console.error('Error creating proposal:', error);
         } finally {
+            setIsWaitingModalOpen(false);
             setIsPending(false); // Stop loading
+            window.location.href = `/dao/project/${projectId}/`;
         }
     };
 
@@ -362,6 +390,8 @@ export default function CreateProposal() {
                         Create Proposal
                     </button>
                 </form>
+
+                <WaitingModal isOpen={isWaitingModalOpen} message={waitingMessage} />
             </div>
         </div>
     );

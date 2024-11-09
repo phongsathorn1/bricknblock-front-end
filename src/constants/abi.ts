@@ -288,63 +288,47 @@ export const REAL_ESTATE_FUNDRAISING_ABI = [
     stateMutability: 'nonpayable',
     type: 'function',
   },
-  {
-    inputs: [
-      {
-        internalType: 'uint256',
-        name: 'additionalDays',
-        type: 'uint256',
-      },
-    ],
-    name: 'extendDeadline',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
+  // ... other functions ...
 ];
 export const DAO_PROPOSALS_ABI = [
   {
     inputs: [
       { internalType: 'address', name: 'propertyToken', type: 'address' },
       { internalType: 'string', name: 'description', type: 'string' },
-      {
-        internalType: 'enum PropertyGovernance.ProposalType',
-        name: 'proposalType',
-        type: 'uint8',
-      },
+      { internalType: 'enum PropertyGovernance.ProposalType', name: 'proposalType', type: 'uint8' },
       { internalType: 'bytes', name: 'callData', type: 'bytes' },
-      { internalType: 'address', name: 'target', type: 'address' },
+      { internalType: 'address', name: 'target', type: 'address' }
     ],
     name: 'propose',
     outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
     stateMutability: 'nonpayable',
-    type: 'function',
+    type: 'function'
   },
   {
     inputs: [
       { internalType: 'address', name: 'propertyToken', type: 'address' },
       { internalType: 'uint256', name: 'proposalId', type: 'uint256' },
-      { internalType: 'bool', name: 'support', type: 'bool' },
+      { internalType: 'bool', name: 'support', type: 'bool' }
     ],
     name: 'castVote',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function',
+    type: 'function'
   },
   {
     inputs: [
       { internalType: 'address', name: 'propertyToken', type: 'address' },
-      { internalType: 'uint256', name: 'proposalId', type: 'uint256' },
+      { internalType: 'uint256', name: 'proposalId', type: 'uint256' }
     ],
     name: 'executeProposal',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function',
+    type: 'function'
   },
   {
     inputs: [
       { internalType: 'address', name: 'propertyToken', type: 'address' },
-      { internalType: 'uint256', name: 'proposalId', type: 'uint256' },
+      { internalType: 'uint256', name: 'proposalId', type: 'uint256' }
     ],
     name: 'getProposal',
     outputs: [
@@ -358,33 +342,13 @@ export const DAO_PROPOSALS_ABI = [
           { internalType: 'uint256', name: 'forVotes', type: 'uint256' },
           { internalType: 'uint256', name: 'againstVotes', type: 'uint256' },
           { internalType: 'bool', name: 'executed', type: 'bool' },
-          {
-            internalType: 'enum PropertyGovernance.ProposalType',
-            name: 'proposalType',
-            type: 'uint8',
-          },
-          { internalType: 'address', name: 'target', type: 'address' },
+          { internalType: 'enum PropertyGovernance.ProposalType', name: 'proposalType', type: 'uint8' },
+          { internalType: 'address', name: 'target', type: 'address' }
         ],
         internalType: 'struct PropertyGovernance.Proposal',
         name: '',
-        type: 'tuple',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
-    inputs: [
-      { internalType: 'address', name: 'propertyToken', type: 'address' },
-      { internalType: 'uint256', name: 'proposalId', type: 'uint256' },
-    ],
-    name: 'getProposalState',
-    outputs: [
-      {
-        internalType: 'enum PropertyGovernance.ProposalState',
-        name: '',
-        type: 'uint8',
-      },
+        type: 'tuple'
+      }
     ],
     stateMutability: 'view',
     type: 'function'
@@ -426,60 +390,239 @@ export const PROPERTY_TOKEN_ABI = [
     inputs: [
       { internalType: 'string', name: 'name', type: 'string' },
       { internalType: 'string', name: 'symbol', type: 'string' },
-      {
-        internalType: 'address',
-        name: '_fundraisingContract',
-        type: 'address',
-      },
-      {
-        internalType: 'address',
-        name: '_factoryFundraisingDao',
-        type: 'address',
-      },
-      { internalType: 'address', name: '_propertyGovernance', type: 'address' },
+      { internalType: 'address', name: '_fundraisingContract', type: 'address' },
+      { internalType: 'address', name: '_factoryFundraisingDao', type: 'address' },
+      { internalType: 'address', name: '_propertyGovernance', type: 'address' }
     ],
     stateMutability: 'nonpayable',
-    type: 'constructor',
+    type: 'constructor'
   },
   {
     inputs: [{ internalType: 'address', name: 'account', type: 'address' }],
     name: 'balanceOf',
     outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
     stateMutability: 'view',
-    type: 'function',
+    type: 'function'
   },
   {
     inputs: [{ internalType: 'address', name: 'delegatee', type: 'address' }],
     name: 'delegate',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function',
+    type: 'function'
   },
   {
     inputs: [{ internalType: 'address', name: 'account', type: 'address' }],
     name: 'getVotes',
     outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
     stateMutability: 'view',
-    type: 'function',
+    type: 'function'
   },
   {
     inputs: [
       { internalType: 'address', name: 'to', type: 'address' },
-      { internalType: 'uint256', name: 'amount', type: 'uint256' },
+      { internalType: 'uint256', name: 'amount', type: 'uint256' }
     ],
     name: 'mint',
     outputs: [],
     stateMutability: 'nonpayable',
-    type: 'function',
+    type: 'function'
   },
   {
     inputs: [
       { internalType: 'address', name: 'to', type: 'address' },
-      { internalType: 'uint256', name: 'value', type: 'uint256' },
+      { internalType: 'uint256', name: 'value', type: 'uint256' }
     ],
     name: 'transfer',
     outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
     stateMutability: 'nonpayable',
-    type: 'function',
+    type: 'function'
+  }
+]
+
+export const FUNDRAISING_FACTORY_DAO_ABI = [
+  {
+    inputs: [
+      { internalType: 'address', name: '_propertyGovernancen', type: 'address' }
+    ],
+    stateMutability: 'nonpayable',
+    type: 'constructor'
   },
-];
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: 'address',
+        name: 'fundraisingDao',
+        type: 'address'
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'goalAmount',
+        type: 'uint256'
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'minInvestment',
+        type: 'uint256'
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'maxInvestment',
+        type: 'uint256'
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'duration',
+        type: 'uint256'
+      }
+    ],
+    name: 'FundraisingDaoCreated',
+    type: 'event'
+  },
+  {
+    inputs: [
+      { internalType: 'uint256', name: '', type: 'uint256' }
+    ],
+    name: 'allFundraisingDaoContracts',
+    outputs: [
+      { internalType: 'address', name: '', type: 'address' }
+    ],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [
+      { internalType: 'address', name: '_usdt', type: 'address' },
+      { internalType: 'address', name: '_propertyToken', type: 'address' },
+      { internalType: 'uint256', name: '_proposalID', type: 'uint256' },
+      { internalType: 'uint256', name: '_goalAmount', type: 'uint256' },
+      { internalType: 'uint256', name: '_minInvestment', type: 'uint256' },
+      { internalType: 'uint256', name: '_maxInvestment', type: 'uint256' },
+      { internalType: 'uint256', name: '_durationDays', type: 'uint256' }
+    ],
+    name: 'createFundraisingDao',
+    outputs: [
+      { internalType: 'address', name: '', type: 'address' }
+    ],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  },
+  {
+    inputs: [
+      { internalType: 'address', name: '', type: 'address' },
+      { internalType: 'uint256', name: '', type: 'uint256' }
+    ],
+    name: 'getAllFundraisingsDaoByPropertyToken',
+    outputs: [
+      { internalType: 'address', name: '', type: 'address' }
+    ],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [
+      { internalType: 'address', name: 'owner', type: 'address' }
+    ],
+    name: 'getAllFundraisingsDaoByPropertyTokenLength',
+    outputs: [
+      { internalType: 'uint256', name: '', type: 'uint256' }
+    ],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'getAllFundraisingsDaoLength',
+    outputs: [
+      { internalType: 'uint256', name: '', type: 'uint256' }
+    ],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [
+      { internalType: 'address', name: '', type: 'address' }
+    ],
+    name: 'getCreateFromFactoryFundraisingsDao',
+    outputs: [
+      { internalType: 'bool', name: '', type: 'bool' }
+    ],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'propertyGovernancen',
+    outputs: [
+      { internalType: 'address', name: '', type: 'address' }
+    ],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: 'amount',
+        type: 'uint256'
+      }
+    ],
+    name: 'invest',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  },
+]
+
+export const FUNDRAISING_DAO_ABI = [
+  {
+    inputs: [],
+    name: 'offer',
+    outputs: [
+      { internalType: 'address', name: 'propertyToken', type: 'address' },
+      { internalType: 'uint256', name: 'proposalID', type: 'uint256' },
+      { internalType: 'uint256', name: 'goalAmount', type: 'uint256' },
+      { internalType: 'uint256', name: 'minInvestment', type: 'uint256' },
+      { internalType: 'uint256', name: 'maxInvestment', type: 'uint256' },
+      { internalType: 'uint256', name: 'deadline', type: 'uint256' },
+      { internalType: 'uint256', name: 'totalRaised', type: 'uint256' },
+      { internalType: 'bool', name: 'isCompleted', type: 'bool' }
+    ],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [{ internalType: 'uint256', name: 'amount', type: 'uint256' }],
+    name: 'invest',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'claimTokens',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'withdrawInvestment',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  },
+  {
+    inputs: [{ internalType: 'uint256', name: 'amount', type: 'uint256' }],
+    name: 'withdrawPartial',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  }
+]

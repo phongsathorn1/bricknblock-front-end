@@ -7,26 +7,26 @@ export function useGraphQuery<T>(query: DocumentNode, variables?: any) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const client = getGraphClient();
-        const result = await client.query({
-          query,
-          variables,
-        });
-        setData(result.data);
-      } catch (err) {
-        setError(err as Error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const client = getGraphClient();
+      const result = await client.query({
+        query,
+        variables,
+      });
+      setData(result.data);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchData();
     console.log('data', data);
   }, [query, JSON.stringify(variables)]);
 
-  return { data, loading, error };
+  return { data, loading, error, refetch: fetchData };
 }
