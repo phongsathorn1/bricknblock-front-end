@@ -165,7 +165,7 @@ export default function DAO() {
     data: dividendsData,
     loading: dividendsLoading,
     error: dividendsError,
-  } = useGraphQuery(GET_DIVIDENDS(projectId as string));
+  }: any = useGraphQuery(GET_DIVIDENDS(projectId as string));
 
   const getStatus = (state: number) => {
     switch (state) {
@@ -430,10 +430,10 @@ export default function DAO() {
               <div className='space-y-4 overflow-y-auto custom-scrollbar flex-grow pr-2'>
                 {dividendsLoading && <p>Loading dividends...</p>}
                 {dividendsError && (
-                  <p>Error loading dividends: {dividendsError.message}</p>
+                  <p>Error loading dividends: {(dividendsError as Error).message}</p>
                 )}
                 {dividendsData &&
-                  dividendsData.propertyToken.dividends.map(
+                  dividendsData?.propertyToken?.dividends?.map(
                     (dividend: any, index: number) => {
                       const isClaimable =
                         ethers.utils.formatEther(dividend.totalClaimed) <

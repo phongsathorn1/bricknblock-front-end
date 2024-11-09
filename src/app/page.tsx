@@ -92,8 +92,8 @@ const FeaturedRWA = ({ item }: { item: RWACardProps }) => {
 };
 
 export default function Home() {
-  const { data, loading, error } =
-    useGraphQuery<SubgraphResponse>(GET_RWA_TOKENS);
+  const { data, loading, error }: any =
+    useGraphQuery(GET_RWA_TOKENS);
   // Get 3 random items from mockRWAItems
   const rwaItems: RWACardProps[] =
     data?.fundraisings?.map((fundraising: any) => {

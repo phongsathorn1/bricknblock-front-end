@@ -93,10 +93,12 @@ export default function ExploreDAOs() {
     const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
-        const address = localStorage.getItem('address');
-        const isConnected = localStorage.getItem('isConnected') === 'true';
-        setAddress(address);
-        setIsConnected(isConnected);
+        if (typeof window !== 'undefined') {
+            const address = localStorage.getItem('address');
+            const isConnected = localStorage.getItem('isConnected') === 'true';
+            setAddress(address);
+            setIsConnected(isConnected);
+        }
     }, []);
 
     const [searchTerm, setSearchTerm] = useState('');

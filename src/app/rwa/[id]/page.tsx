@@ -76,9 +76,9 @@ const getRWADetail = (
         expectedReturn: mockDetail.investment?.expectedReturn || '0%',
         investmentPeriod: fundraising.deadline
           ? `${Math.floor(
-              (parseInt(fundraising.deadline) - Date.now() / 1000) /
-                (24 * 60 * 60)
-            )} days`
+            (parseInt(fundraising.deadline) - Date.now() / 1000) /
+            (24 * 60 * 60)
+          )} days`
           : mockDetail.investment?.investmentPeriod || '0 days',
         totalShares:
           fundraising.propertyToken?.totalSupply ||
@@ -126,28 +126,30 @@ export default function RWADetail() {
   useEffect(() => {
     const fetchBalance = async () => {
       try {
-        const storedAddress = localStorage.getItem('address');
-        if (storedAddress) {
-          setAddress(storedAddress);
+        if (typeof window !== 'undefined') {
+          const storedAddress = localStorage.getItem('address');
+          if (storedAddress) {
+            setAddress(storedAddress);
 
-          const provider = new ethers.providers.Web3Provider(window.ethereum);
-          const usdtContract = new ethers.Contract(
-            CONTRACT_ADDRESSES.USDT,
-            [
-              // ERC20 ABI for balanceOf function
-              {
-                constant: true,
-                inputs: [{ name: '_owner', type: 'address' }],
-                name: 'balanceOf',
-                outputs: [{ name: 'balance', type: 'uint256' }],
-                type: 'function',
-              },
-            ],
-            provider
-          );
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const usdtContract = new ethers.Contract(
+              CONTRACT_ADDRESSES.USDT,
+              [
+                // ERC20 ABI for balanceOf function
+                {
+                  constant: true,
+                  inputs: [{ name: '_owner', type: 'address' }],
+                  name: 'balanceOf',
+                  outputs: [{ name: 'balance', type: 'uint256' }],
+                  type: 'function',
+                },
+              ],
+              provider
+            );
 
-          const balance = await usdtContract.balanceOf(storedAddress);
-          setUserBalance(parseFloat(ethers.utils.formatUnits(balance, 18)));
+            const balance = await usdtContract.balanceOf(storedAddress);
+            setUserBalance(parseFloat(ethers.utils.formatUnits(balance, 18)));
+          }
         }
       } catch (error) {
         console.error('Error fetching balance:', error);
@@ -421,10 +423,10 @@ export default function RWADetail() {
           value < min
             ? 'Amount below minimum'
             : value > max
-            ? 'Amount above maximum'
-            : value > remaining
-            ? 'Amount exceeds remaining'
-            : '',
+              ? 'Amount above maximum'
+              : value > remaining
+                ? 'Amount exceeds remaining'
+                : '',
       };
     } catch {
       return { isValid: false, error: 'Invalid amount' };
@@ -529,7 +531,7 @@ export default function RWADetail() {
   const averageInvestment =
     fundraising.investments.length > 0
       ? parseFloat(formatEther(BigInt(fundraising.totalRaised))) /
-        fundraising.investments.length
+      fundraising.investments.length
       : 0;
 
   const getRemainingAmount = () => {
@@ -673,19 +675,18 @@ export default function RWADetail() {
                   </span>
                   <span
                     className={`inline-flex px-2 py-1 rounded-full text-xs
-                    ${
-                      fundraising.isCompleted
+                    ${fundraising.isCompleted
                         ? 'bg-green-900/20 text-green-400'
                         : isExpired(fundraising.deadline)
-                        ? 'bg-red-900/20 text-red-400'
-                        : 'bg-yellow-900/20 text-yellow-400'
-                    }`}
+                          ? 'bg-red-900/20 text-red-400'
+                          : 'bg-yellow-900/20 text-yellow-400'
+                      }`}
                   >
                     {fundraising.isCompleted
                       ? 'Completed'
                       : isExpired(fundraising.deadline)
-                      ? 'Expired'
-                      : 'Active'}
+                        ? 'Expired'
+                        : 'Active'}
                   </span>
                   <span className='block text-text-secondary text-xs mt-1'>
                     {formatDate(fundraising.deadline)}
@@ -693,7 +694,7 @@ export default function RWADetail() {
                   {isExpired(fundraising.deadline) &&
                     !fundraising.isCompleted &&
                     address?.toLowerCase() ===
-                      fundraising.owner.toLowerCase() && (
+                    fundraising.owner.toLowerCase() && (
                       <button
                         onClick={() => setShowDatePicker(true)}
                         className='absolute top-2 right-2 px-2 py-1 bg-red-500/20 text-red-400 rounded-full 
@@ -745,10 +746,9 @@ export default function RWADetail() {
                   setShowInvestModal(true)
                 }
                 className={`w-full px-8 py-4 bg-gradient-to-r 
-                  ${
-                    fundraising.isCompleted || isExpired(fundraising.deadline)
-                      ? 'from-gray-400 to-gray-500 cursor-not-allowed'
-                      : 'from-prime-gold to-prime-gold/80 hover:from-prime-gold/90 hover:to-prime-gold/70'
+                  ${fundraising.isCompleted || isExpired(fundraising.deadline)
+                    ? 'from-gray-400 to-gray-500 cursor-not-allowed'
+                    : 'from-prime-gold to-prime-gold/80 hover:from-prime-gold/90 hover:to-prime-gold/70'
                   }
                   text-prime-black font-medium rounded
                   transition-all duration-300 uppercase tracking-wider`}
@@ -756,8 +756,8 @@ export default function RWADetail() {
                 {fundraising.isCompleted
                   ? 'Fundraising Completed'
                   : isExpired(fundraising.deadline)
-                  ? 'Fundraising Expired'
-                  : 'Invest Now'}
+                    ? 'Fundraising Expired'
+                    : 'Invest Now'}
               </button>
             </div>
           </div>
@@ -856,57 +856,56 @@ export default function RWADetail() {
                     <td className='px-6 py-4 whitespace-nowrap'>
                       <div className='flex items-center gap-2'>
                         <span
-                          className={`px-3 py-1 rounded-full text-sm ${
-                            investment.claimed && fundraising.isCompleted
+                          className={`px-3 py-1 rounded-full text-sm ${investment.claimed && fundraising.isCompleted
                               ? 'bg-green-900/20 text-green-400'
                               : userInvestment === 0 && !fundraising.isCompleted
-                              ? 'bg-blue-900/20 text-blue-400'
-                              : 'bg-yellow-900/20 text-yellow-400'
-                          }`}
+                                ? 'bg-blue-900/20 text-blue-400'
+                                : 'bg-yellow-900/20 text-yellow-400'
+                            }`}
                         >
                           {investment.claimed && fundraising.isCompleted
                             ? 'Claimed'
                             : !investment.claimed && userInvestment === 0
-                            ? 'Withdrawn'
-                            : 'Pending'}
+                              ? 'Withdrawn'
+                              : 'Pending'}
                         </span>
 
                         {address?.toLowerCase() ===
                           investment.investor.toLowerCase() && (
-                          <>
-                            {!investment.claimed &&
-                              !fundraising.isCompleted &&
-                              userInvestment > 0 && (
-                                <button
-                                  onClick={() => setShowWithdrawModal(true)}
-                                  disabled={isContractWriting}
-                                  className='px-3 py-1 bg-red-500/20 text-red-400 rounded-full 
+                            <>
+                              {!investment.claimed &&
+                                !fundraising.isCompleted &&
+                                userInvestment > 0 && (
+                                  <button
+                                    onClick={() => setShowWithdrawModal(true)}
+                                    disabled={isContractWriting}
+                                    className='px-3 py-1 bg-red-500/20 text-red-400 rounded-full 
                                          hover:bg-red-500/30 transition-colors duration-300 text-sm 
+                                         disabled:opacity-50'
+                                  >
+                                    {isContractWriting
+                                      ? 'Withdrawing...'
+                                      : 'Withdraw'}
+                                  </button>
+                                )}
+
+                              {fundraising.isCompleted && !investment.claimed && (
+                                <button
+                                  onClick={() => handleClaim()}
+                                  disabled={
+                                    isContractWriting || investment.claimed
+                                  }
+                                  className='px-3 py-1 bg-prime-gold/20 text-prime-gold rounded-full
+                                         hover:bg-prime-gold/30 transition-colors duration-300 text-sm
                                          disabled:opacity-50'
                                 >
                                   {isContractWriting
-                                    ? 'Withdrawing...'
-                                    : 'Withdraw'}
+                                    ? 'Processing...'
+                                    : 'Claim Tokens'}
                                 </button>
                               )}
-
-                            {fundraising.isCompleted && !investment.claimed && (
-                              <button
-                                onClick={() => handleClaim()}
-                                disabled={
-                                  isContractWriting || investment.claimed
-                                }
-                                className='px-3 py-1 bg-prime-gold/20 text-prime-gold rounded-full
-                                         hover:bg-prime-gold/30 transition-colors duration-300 text-sm
-                                         disabled:opacity-50'
-                              >
-                                {isContractWriting
-                                  ? 'Processing...'
-                                  : 'Claim Tokens'}
-                              </button>
-                            )}
-                          </>
-                        )}
+                            </>
+                          )}
                       </div>
                     </td>
                   </tr>
@@ -935,9 +934,8 @@ export default function RWADetail() {
                 >
                   <span>Property Details</span>
                   <svg
-                    className={`w-6 h-6 transition-transform ${
-                      showDetails ? 'rotate-180' : ''
-                    }`}
+                    className={`w-6 h-6 transition-transform ${showDetails ? 'rotate-180' : ''
+                      }`}
                     fill='none'
                     stroke='currentColor'
                     viewBox='0 0 24 24'
@@ -987,9 +985,8 @@ export default function RWADetail() {
                 >
                   <span>Amenities & Documents</span>
                   <svg
-                    className={`w-6 h-6 transition-transform ${
-                      showAmenities ? 'rotate-180' : ''
-                    }`}
+                    className={`w-6 h-6 transition-transform ${showAmenities ? 'rotate-180' : ''
+                      }`}
                     fill='none'
                     stroke='currentColor'
                     viewBox='0 0 24 24'
@@ -1152,11 +1149,10 @@ export default function RWADetail() {
                 </div>
                 {investAmount && (
                   <div
-                    className={`mt-2 text-sm ${
-                      validateInvestment(investAmount).isValid
+                    className={`mt-2 text-sm ${validateInvestment(investAmount).isValid
                         ? 'text-green-400'
                         : 'text-red-400'
-                    }`}
+                      }`}
                   >
                     {validateInvestment(investAmount).error || 'Valid amount'}
                   </div>
@@ -1172,12 +1168,11 @@ export default function RWADetail() {
               }
               onClick={handleInvest}
               className={`w-full px-6 py-3 rounded mt-6
-                ${
-                  !investAmount ||
+                ${!investAmount ||
                   !validateInvestment(investAmount).isValid ||
                   isInvesting
-                    ? 'bg-gray-500 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-prime-gold to-prime-gold/80 hover:from-prime-gold/90 hover:to-prime-gold/70'
+                  ? 'bg-gray-500 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-prime-gold to-prime-gold/80 hover:from-prime-gold/90 hover:to-prime-gold/70'
                 }
                 text-prime-black font-medium uppercase tracking-wider
                 transition-all duration-300`}
@@ -1250,10 +1245,9 @@ export default function RWADetail() {
                 setShowWithdrawModal(false);
               }}
               className={`w-full px-6 py-3 rounded mt-6
-                ${
-                  !withdrawAmount
-                    ? 'bg-gray-500 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-prime-gold to-prime-gold/80 hover:from-prime-gold/90 hover:to-prime-gold/70'
+                ${!withdrawAmount
+                  ? 'bg-gray-500 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-prime-gold to-prime-gold/80 hover:from-prime-gold/90 hover:to-prime-gold/70'
                 }
                 text-prime-black font-medium uppercase tracking-wider
                 transition-all duration-300`}

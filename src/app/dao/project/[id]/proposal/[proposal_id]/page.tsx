@@ -114,10 +114,12 @@ const VoteModal = ({
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const address = localStorage.getItem('address');
-    const isConnected = localStorage.getItem('isConnected') === 'true';
-    setAddress(address);
-    setIsConnected(isConnected);
+    if (typeof window !== 'undefined') {
+      const address = localStorage.getItem('address');
+      const isConnected = localStorage.getItem('isConnected') === 'true';
+      setAddress(address);
+      setIsConnected(isConnected);
+    }
   }, []);
 
   const { data, loading, error } = useGraphQuery<{ propertyToken: any }>(
@@ -147,13 +149,12 @@ const VoteModal = ({
         <div className='mb-6'>
           <div className='flex items-center gap-2 mb-4'>
             <div
-              className={`w-3 h-3 rounded-full ${
-                selectedVote === 'for'
-                  ? 'bg-green-500'
-                  : selectedVote === 'against'
+              className={`w-3 h-3 rounded-full ${selectedVote === 'for'
+                ? 'bg-green-500'
+                : selectedVote === 'against'
                   ? 'bg-red-500'
                   : 'bg-gray-500'
-              }`}
+                }`}
             />
             <span className='text-text-primary capitalize'>{selectedVote}</span>
           </div>
@@ -245,23 +246,23 @@ const FundraisingDaoBlock = ({
       }
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
- 
+
       const fundraisingDaoContract = new ethers.Contract(
         factoryFundraisingDaoAddress || '',
         FUNDRAISING_DAO_ABI,
         signer
       )
-      
-      const claimResult = await fundraisingDaoContract.claimTokens()s
-     
+
+      const claimResult = await fundraisingDaoContract.claimTokens()
+
     } catch (error) {
       console.error('Error Claim token:', error)
     } finally {
-       
+
     }
   };
 
-  
+
   return (
     data?.fundraisingDao && (
       <div className="mt-8 p-6 card-prime rounded-lg border border-prime-gray/30">
@@ -270,11 +271,10 @@ const FundraisingDaoBlock = ({
             Fundraising DAO Details
           </h3>
           <span
-            className={`px-2 py-1 rounded ${
-              data?.fundraisingDao.isCompleted
-                ? 'bg-green-500/10 text-green-500'
-                : 'bg-yellow-500/10 text-yellow-500'
-            }`}
+            className={`px-2 py-1 rounded ${data?.fundraisingDao.isCompleted
+              ? 'bg-green-500/10 text-green-500'
+              : 'bg-yellow-500/10 text-yellow-500'
+              }`}
           >
             {data?.fundraisingDao.isCompleted ? 'Completed' : 'In Progress'}
           </span>
@@ -307,7 +307,7 @@ const FundraisingDaoBlock = ({
                 width: `${Math.min(
                   ((Number(data?.fundraisingDao.totalRaised) || 0) /
                     (Number(data?.fundraisingDao.goalAmount) || 0)) *
-                    100,
+                  100,
                   100
                 )}%`,
               }}
@@ -318,7 +318,7 @@ const FundraisingDaoBlock = ({
               {Math.round(
                 (Number(data?.fundraisingDao.totalRaised || 0) /
                   Number(data?.fundraisingDao.goalAmount || 0)) *
-                  100
+                100
               )}
               % Funded
             </span>
@@ -852,31 +852,28 @@ export default function ProposalPage() {
             <div className='flex gap-4 mb-6 border-b border-prime-gray/30'>
               <button
                 onClick={() => setActiveTab('proposal')}
-                className={`pb-4 px-2 ${
-                  activeTab === 'proposal'
-                    ? 'text-prime-gold border-b-2 border-prime-gold'
-                    : 'text-text-secondary'
-                }`}
+                className={`pb-4 px-2 ${activeTab === 'proposal'
+                  ? 'text-prime-gold border-b-2 border-prime-gold'
+                  : 'text-text-secondary'
+                  }`}
               >
                 Proposal
               </button>
               <button
                 onClick={() => setActiveTab('votes')}
-                className={`pb-4 px-2 ${
-                  activeTab === 'votes'
-                    ? 'text-prime-gold border-b-2 border-prime-gold'
-                    : 'text-text-secondary'
-                }`}
+                className={`pb-4 px-2 ${activeTab === 'votes'
+                  ? 'text-prime-gold border-b-2 border-prime-gold'
+                  : 'text-text-secondary'
+                  }`}
               >
                 Votes
               </button>
               <button
                 onClick={() => setActiveTab('timeline')}
-                className={`pb-4 px-2 ${
-                  activeTab === 'timeline'
-                    ? 'text-prime-gold border-b-2 border-prime-gold'
-                    : 'text-text-secondary'
-                }`}
+                className={`pb-4 px-2 ${activeTab === 'timeline'
+                  ? 'text-prime-gold border-b-2 border-prime-gold'
+                  : 'text-text-secondary'
+                  }`}
               >
                 Timeline
               </button>
@@ -902,9 +899,6 @@ export default function ProposalPage() {
                       factoryFundraisingDaoAddress={
                         factoryFundraisingDaoAddress || ''
                       }
-                      setFactoryFundraisingDaoAddress={
-                        setFactoryFundraisingDaoAddress
-                      }
                       projectId={params.id as string}
                     />
                   )}
@@ -921,11 +915,10 @@ export default function ProposalPage() {
                         {vote.voterAddress}
                       </span>
                       <span
-                        className={`px-2 py-1 rounded text-sm ${
-                          vote.support
-                            ? 'bg-green-500/10 text-green-500'
-                            : 'bg-red-500/10 text-red-500'
-                        }`}
+                        className={`px-2 py-1 rounded text-sm ${vote.support
+                          ? 'bg-green-500/10 text-green-500'
+                          : 'bg-red-500/10 text-red-500'
+                          }`}
                       >
                         {vote.support ? 'For' : 'Against'}
                       </span>
@@ -977,7 +970,7 @@ export default function ProposalPage() {
                     {Math.ceil(
                       (parseInt(data.proposal.endTime) -
                         parseInt(data.proposal.startTime)) /
-                        (24 * 60 * 60)
+                      (24 * 60 * 60)
                     )}{' '}
                     days
                   </div>
@@ -1105,15 +1098,14 @@ export default function ProposalPage() {
                         setSelectedVote(option);
                         setIsVoteModalOpen(true);
                       }}
-                      className={`w-full p-4 rounded-lg border-2 ${
-                        selectedVote === option
-                          ? option === 'for'
-                            ? 'border-green-500 bg-green-500/20 text-green-400'
-                            : 'border-red-500 bg-red-500/20 text-red-400'
-                          : option === 'for'
+                      className={`w-full p-4 rounded-lg border-2 ${selectedVote === option
+                        ? option === 'for'
+                          ? 'border-green-500 bg-green-500/20 text-green-400'
+                          : 'border-red-500 bg-red-500/20 text-red-400'
+                        : option === 'for'
                           ? 'border-green-500/50 hover:bg-green-500/10 text-green-500'
                           : 'border-red-500/50 hover:bg-red-500/10 text-red-500'
-                      } transition-all duration-200 capitalize font-medium 
+                        } transition-all duration-200 capitalize font-medium 
                                             active:scale-[0.99] shadow-sm hover:shadow-md`}
                     >
                       {option}

@@ -7,6 +7,7 @@ export interface RWACardProps {
   price: string;
   currency: string;
   image: string;
+  type: string;
 }
 
 export interface RWADetailProps extends RWACardProps {
@@ -18,6 +19,9 @@ export interface RWADetailProps extends RWACardProps {
     built: string;
     type: string;
     status: string;
+    bedrooms: string;
+    bathrooms: string;
+    parking: string;
   };
   documents: Array<{
     name: string;
@@ -30,4 +34,5 @@ export interface RWADetailProps extends RWACardProps {
     totalShares: string;
     availableShares: string;
   };
+  isVerified?: boolean;
 }

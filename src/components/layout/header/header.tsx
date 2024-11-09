@@ -39,10 +39,14 @@ const navigation: NavGroup[] = [
 
 export const Header = () => {
   const [address, setAddress] = useState<string | null>(() =>
-    localStorage.getItem('address')
+    typeof window !== 'undefined'
+      ? localStorage.getItem('address')
+      : null
   );
   const [isConnected, setIsConnected] = useState(
-    () => localStorage.getItem('isConnected') === 'true'
+    () =>
+      typeof window !== 'undefined' &&
+      localStorage.getItem('isConnected') === 'true'
   );
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -68,7 +72,7 @@ export const Header = () => {
   }
 
   const handleConnect = async () => {
-    if (window.ethereum) {
+    if (typeof window !== 'undefined' && window.ethereum) {
       try {
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         await provider.send('eth_requestAccounts', []);
