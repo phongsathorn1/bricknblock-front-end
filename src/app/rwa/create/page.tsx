@@ -36,6 +36,8 @@ export default function CreateRWA() {
   // State for controlling the success modal visibility
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
+  const [isImageUploading, setIsImageUploading] = useState(false);
+
   useEffect(() => {
     if (window.ethereum) {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -55,10 +57,8 @@ export default function CreateRWA() {
         setImagePreview(reader.result as string);
 
         try {
-          // Upload the image to IPFS and get the hash
+          setIsImageUploading(true); // Start image upload
           const ipfsHash = await uploadToIPFS(file);
-
-          // Set the IPFS hash in the form data
           setFormData((prevData) => ({
             ...prevData,
             imageIPFS: ipfsHash,
@@ -66,6 +66,8 @@ export default function CreateRWA() {
         } catch (error) {
           console.error('Error uploading image to IPFS:', error);
           alert('Failed to upload image to IPFS. Please try again.');
+        } finally {
+          setIsImageUploading(false); // End image upload
         }
       };
       reader.readAsDataURL(file);
@@ -566,13 +568,13 @@ export default function CreateRWA() {
             <button
               type='button'
               onClick={handleMintNFT}
-              disabled={!isConnected || isPending}
+              disabled={!isConnected || isPending || isImageUploading}
               className={`w-full px-8 py-4 bg-prime-gray border border-prime-gold/20
                 hover:border-prime-gold/40 text-text-primary rounded
                 transition-all duration-300 uppercase tracking-wider
                 mt-6
                 ${
-                  !isConnected || isPending
+                  !isConnected || isPending || isImageUploading
                     ? 'opacity-50 cursor-not-allowed'
                     : ''
                 }`}

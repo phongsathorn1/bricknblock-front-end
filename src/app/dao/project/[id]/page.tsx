@@ -335,7 +335,7 @@ export default function DAO() {
             <div className='bg-prime-gray rounded-lg p-6 max-w-md w-full max-h-[90vh] flex flex-col'>
               <div className='flex justify-between items-center mb-6'>
                 <h3 className='text-xl font-display uppercase tracking-wider text-text-primary'>
-                  Add Yield
+                  Add Dividends
                 </h3>
                 <button
                   onClick={() => setIsModalOpen(false)}
@@ -434,41 +434,53 @@ export default function DAO() {
                 )}
                 {dividendsData &&
                   dividendsData.propertyToken.dividends.map(
-                    (dividend: any, index: number) => (
-                      <div
-                        key={dividend.id}
-                        className='p-4 bg-prime-black/30 rounded-lg space-y-2'
-                      >
-                        <div className='flex justify-between text-sm'>
-                          <span className='text-text-secondary'>Amount</span>
-                          <span className='text-text-primary'>
-                            {ethers.utils.formatEther(dividend.amount)} USDT
-                          </span>
+                    (dividend: any, index: number) => {
+                      const isClaimable =
+                        ethers.utils.formatEther(dividend.totalClaimed) <
+                        ethers.utils.formatEther(dividend.amount);
+                      return (
+                        <div
+                          key={dividend.id}
+                          className='p-4 bg-prime-black/30 rounded-lg space-y-2'
+                        >
+                          <div className='text-text-primary font-bold'>
+                            Dividend #{index + 1}
+                          </div>
+                          <div className='flex justify-between text-sm'>
+                            <span className='text-text-secondary'>Amount</span>
+                            <span className='text-text-primary'>
+                              {ethers.utils.formatEther(dividend.amount)} USDT
+                            </span>
+                          </div>
+                          <div className='flex justify-between text-sm'>
+                            <span className='text-text-secondary'>
+                              Total Claimed
+                            </span>
+                            <span className='text-text-primary'>
+                              {ethers.utils.formatEther(dividend.totalClaimed)}{' '}
+                              USDT
+                            </span>
+                          </div>
+                          <div className='flex justify-end'>
+                            <button
+                              onClick={() => handleClaimDividend(index)}
+                              disabled={claiming === index || !isClaimable}
+                              className={`mt-2 px-4 py-2 rounded ${
+                                claiming === index || !isClaimable
+                                  ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                                  : 'bg-prime-gold text-prime-black'
+                              }`}
+                            >
+                              {claiming === index
+                                ? 'Processing...'
+                                : !isClaimable
+                                ? 'Claimed'
+                                : 'Claim'}
+                            </button>
+                          </div>
                         </div>
-                        <div className='flex justify-between text-sm'>
-                          <span className='text-text-secondary'>
-                            Total Claimed
-                          </span>
-                          <span className='text-text-primary'>
-                            {ethers.utils.formatEther(dividend.totalClaimed)}{' '}
-                            USDT
-                          </span>
-                        </div>
-                        <div className='flex justify-end'>
-                          <button
-                            onClick={() => handleClaimDividend(index)}
-                            disabled={claiming === index}
-                            className={`mt-2 px-4 py-2 rounded ${
-                              claiming === index
-                                ? 'bg-yellow-400 text-yellow-900 cursor-not-allowed'
-                                : 'bg-prime-gold text-prime-black'
-                            }`}
-                          >
-                            {claiming === index ? 'Processing...' : 'Claim'}
-                          </button>
-                        </div>
-                      </div>
-                    )
+                      );
+                    }
                   )}
               </div>
             </div>

@@ -9,7 +9,11 @@ import { RWADetailProps } from '@/lib/types/rwa';
 import { formatDistanceToNow, fromUnixTime } from 'date-fns';
 import { formatEther, parseEther, parseUnits } from 'viem';
 import { useEffect, useState } from 'react';
-import { NFT_ABI, REAL_ESTATE_FUNDRAISING_ABI } from '@/constants/abi';
+import {
+  DAO_PROPOSALS_ABI,
+  PROPERTY_TOKEN_ABI,
+  REAL_ESTATE_FUNDRAISING_ABI,
+} from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts';
 import { ethers } from 'ethers';
 import bscscanLogo from '@/assets/icons/bscscan-logo.png';
@@ -111,7 +115,7 @@ export default function RWADetail() {
   const refetchData = () => {
     setTimeout(() => {
       setRefetchTrigger(!refetchTrigger);
-    }, 5000); // Delay of 5000 milliseconds (5 seconds)
+    }, 2000); // Delay of 2000 milliseconds (2 seconds)
   };
 
   console.log('data', data);
@@ -162,7 +166,8 @@ export default function RWADetail() {
     const maxInvestment = parseFloat(
       formatEther(BigInt(fundraising.maxInvestment))
     );
-    const maxAmount = Math.min(userBalance, maxInvestment);
+    const remainingAmount = parseFloat(formatEther(getRemainingAmount()));
+    const maxAmount = Math.min(userBalance, maxInvestment, remainingAmount);
     setInvestAmount(maxAmount.toString());
   };
 
@@ -252,6 +257,19 @@ export default function RWADetail() {
       const transaction = await contract.claimTokens();
       console.log('Claim transaction:', transaction.hash);
       await transaction.wait(); // Wait for the transaction to be confirmed
+      alert('Starting delegation...');
+      const DelegateContract = new ethers.Contract(
+        fundraising.nft?.propertyToken?.id,
+        PROPERTY_TOKEN_ABI,
+        signer
+      );
+
+      const delegateResult = await DelegateContract.delegate(
+        signer.getAddress()
+      );
+      const delegateReceipt = await delegateResult.wait();
+      alert('Delegation completed!');
+      console.log('Delegate receipt:', delegateReceipt);
       refetchData(); // Refetch data after transaction confirmation
       // Add success notification here
     } catch (error) {
