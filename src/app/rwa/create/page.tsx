@@ -25,6 +25,7 @@ export default function CreateRWA() {
     minInvestment: '',
     maxInvestment: '',
     durationDays: '',
+    imageIPFS: '',
   });
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -47,12 +48,26 @@ export default function CreateRWA() {
     }
   }, []);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         setImagePreview(reader.result as string);
+
+        try {
+          // Upload the image to IPFS and get the hash
+          const ipfsHash = await uploadToIPFS(file);
+
+          // Set the IPFS hash in the form data
+          setFormData((prevData) => ({
+            ...prevData,
+            imageIPFS: ipfsHash,
+          }));
+        } catch (error) {
+          console.error('Error uploading image to IPFS:', error);
+          alert('Failed to upload image to IPFS. Please try again.');
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -562,11 +577,16 @@ export default function CreateRWA() {
             </h2>
 
             {/* Display Form Data in a Paper-like Box */}
-            <div className='p-6 bg-white border border-gray-300 shadow-md rounded-lg mt-6'>
+            <div className='p-6 bg-white border border-gray-300 shadow-md rounded-lg mt-6 w-2/3 mx-auto'>
               <h3 className='font-display text-lg uppercase tracking-wider text-black mb-4'>
                 Submitted Information
               </h3>
               <div className='space-y-2 text-black'>
+                {nftId && (
+                  <div className='flex justify-between'>
+                    <strong>NFT ID:</strong> <span>{nftId}</span>
+                  </div>
+                )}
                 <div className='flex justify-between'>
                   <strong>Location:</strong> <span>{formData.location}</span>
                 </div>
@@ -575,33 +595,44 @@ export default function CreateRWA() {
                   <span>{formData.propertyType}</span>
                 </div>
                 <div className='flex justify-between'>
-                  <strong>Target Amount:</strong>{' '}
-                  <span>{formData.targetAmount}</span>
+                  <strong>Area:</strong>{' '}
+                  <span>{formData.area + ' (sq ft)'}</span>
                 </div>
                 <div className='flex justify-between'>
-                  <strong>Currency:</strong> <span>{formData.currency}</span>
+                  <strong>Target Amount:</strong>{' '}
+                  <span>
+                    {formData.targetAmount} {formData.currency}
+                  </span>
+                </div>
+                <div className='flex justify-between'>
+                  <strong>Min Investment:</strong>{' '}
+                  <span>
+                    {formData.minInvestment} {formData.currency}
+                  </span>
+                </div>
+                <div className='flex justify-between'>
+                  <strong>Max Investment:</strong>{' '}
+                  <span>
+                    {formData.maxInvestment} {formData.currency}
+                  </span>
                 </div>
                 <div className='flex justify-between'>
                   <strong>Description:</strong>{' '}
                   <span>{formData.description}</span>
                 </div>
                 <div className='flex justify-between'>
-                  <strong>Area:</strong> <span>{formData.area}</span>
-                </div>
-                <div className='flex justify-between'>
                   <strong>Documents:</strong> <span>{formData.documents}</span>
                 </div>
-                <div className='flex justify-between'>
-                  <strong>Min Investment:</strong>{' '}
-                  <span>{formData.minInvestment}</span>
-                </div>
-                <div className='flex justify-between'>
-                  <strong>Max Investment:</strong>{' '}
-                  <span>{formData.maxInvestment}</span>
-                </div>
-                {nftId && (
-                  <div className='flex justify-between'>
-                    <strong>NFT ID:</strong> <span>{nftId}</span>
+                {/* Display Image from IPFS */}
+                {formData.imageIPFS && (
+                  <div className='flex justify-center mt-4'>
+                    <Image
+                      src={`https://ipfs.io/ipfs/${formData.imageIPFS}`}
+                      alt='Property Image'
+                      width={400}
+                      height={225}
+                      className='rounded-lg'
+                    />
                   </div>
                 )}
               </div>

@@ -2,6 +2,7 @@ import Image from 'next/image';
 import { RWACardProps, RWADetailProps } from '@/lib/types/rwa';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { formatOwnerName, formatPrice } from '@/helper/styleHelper';
 
 const ProgressBar = ({
   raised,
@@ -18,10 +19,10 @@ const ProgressBar = ({
     <div className='w-full'>
       <div className='flex justify-between text-xs text-text-secondary mb-2'>
         <span>
-          Raised: {raised.toLocaleString()} {currency}
+          Raised: {formatPrice(raised)} {currency}
         </span>
         <span>
-          Target: {target.toLocaleString()} {currency}
+          Target: {formatPrice(target)} {currency}
         </span>
       </div>
       <div className='h-1 bg-prime-gray/50 rounded-full overflow-hidden'>
@@ -65,25 +66,11 @@ export function RWACard({ item }: { item: RWADetailProps }) {
     return () => clearInterval(timer);
   }, [item.deadline, item.status]);
 
-  const formatPrice = (price: number) => {
-    if (price >= 1000000) {
-      const formattedPrice = (price / 1000000).toFixed(1);
-      return formattedPrice.endsWith('.0')
-        ? `${Math.round(price / 1000000)}M`
-        : `${formattedPrice}M`;
-    } else if (price >= 1000) {
-      const formattedPrice = (price / 1000).toFixed(1);
-      return formattedPrice.endsWith('.0')
-        ? `${Math.round(price / 1000)}K`
-        : `${formattedPrice}K`;
-    }
-    return price.toLocaleString(); // Formats numbers with commas
-  };
   return (
     <Link
       href={`/rwa/${item.id}`}
       className='group bg-prime-gray border border-prime-gold/10 rounded-lg overflow-hidden 
-              hover:border-prime-gold/30 transition-all duration-300 relative'
+              hover:border-prime-gold/30 transition-all duration-300 relative flex flex-col h-full'
     >
       {/* Status Badge */}
       <span
@@ -99,10 +86,7 @@ export function RWACard({ item }: { item: RWADetailProps }) {
         {item.status}
       </span>
 
-      <div
-        className='group bg-prime-gray border border-prime-gold/10 rounded-lg overflow-hidden 
-                    hover:border-prime-gold/30 transition-all duration-300'
-      >
+      <div className='flex-grow flex flex-col'>
         {/* Image Container */}
         <div className='relative h-48 overflow-hidden'>
           <Image
@@ -118,9 +102,9 @@ export function RWACard({ item }: { item: RWADetailProps }) {
         </div>
 
         {/* Content */}
-        <div className='p-4 space-y-3'>
+        <div className='p-4 space-y-3 flex flex-col flex-grow'>
           {/* Name */}
-          <h3 className='font-display text-base uppercase tracking-wider text-text-primary'>
+          <h3 className='font-display text-base uppercase tracking-wider text-text-primary overflow-hidden text-ellipsis'>
             {item.name}
           </h3>
 
@@ -148,15 +132,34 @@ export function RWACard({ item }: { item: RWADetailProps }) {
             {item.location}
           </p>
 
-          {/* Progress Bar */}
-          <ProgressBar
-            raised={item.raisedAmount}
-            target={item.targetAmount}
-            currency={item.currency}
-          />
+          {/* Spacer to push raised, progress bar, owner, and price to the bottom */}
+          <div className='flex-grow'></div>
 
-          {/* Price */}
+          {/* Raised and Progress Bar */}
+          <div>
+            <ProgressBar
+              raised={item.raisedAmount}
+              target={item.targetAmount}
+              currency={item.currency}
+            />
+          </div>
+
+          {/* Owner and Price */}
           <div className='pt-3 border-t border-prime-gold/10 flex justify-between items-center'>
+            <div className='flex items-center'>
+              <Image
+                src={`https://randomuser.me/api/portraits/thumb/men/${Math.floor(
+                  Math.random() * 100
+                )}.jpg`}
+                alt='Owner'
+                width={32}
+                height={32}
+                className='rounded-full mr-2'
+              />
+              <span className='text-sm text-text-secondary'>
+                {formatOwnerName(item.owner)}
+              </span>
+            </div>
             <div>
               <span className='text-xs text-text-secondary uppercase tracking-wider block'>
                 Price
@@ -165,14 +168,6 @@ export function RWACard({ item }: { item: RWADetailProps }) {
                 {formatPrice(item.price)} {item.currency}
               </span>
             </div>
-            <button
-              className='px-4 py-1.5 bg-prime-gray border border-prime-gold/20 
-                           hover:border-prime-gold/40 text-text-primary rounded
-                           transition-all duration-300 text-sm uppercase tracking-wider 
-                           hover:bg-prime-gold/5'
-            >
-              View Details
-            </button>
           </div>
         </div>
       </div>

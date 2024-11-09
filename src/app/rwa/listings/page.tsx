@@ -70,6 +70,7 @@ export default function ListedRWA() {
         type: fundraising.nft?.propertyType || mockItem.type,
         isCompleted: fundraising.isCompleted,
         deadline: fundraising.deadline,
+        owner: fundraising.owner,
       };
     }) || mockRWAItems;
 

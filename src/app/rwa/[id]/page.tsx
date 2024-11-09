@@ -106,10 +106,11 @@ export default function RWADetail() {
     { refetchTrigger }
   );
 
-  // const refetchData = () => {
-  //   console.log('refetching data');
-  //   setRefetchTrigger(!refetchTrigger);
-  // };
+  const refetchData = () => {
+    setTimeout(() => {
+      setRefetchTrigger(!refetchTrigger);
+    }, 5000); // Delay of 5000 milliseconds (5 seconds)
+  };
 
   console.log('data', data);
 
@@ -220,6 +221,7 @@ export default function RWADetail() {
       );
       await withdrawTx.wait();
       console.log('Withdrawal transaction:', withdrawTx);
+      refetchData(); // Refetch data after transaction confirmation
       // Add success notification here
     } catch (error) {
       console.error('Withdrawal error:', error);
@@ -245,7 +247,7 @@ export default function RWADetail() {
       // Call the claimTokens function
       const transaction = await contract.claimTokens();
       console.log('Claim transaction:', transaction.hash);
-
+      refetchData(); // Refetch data after transaction confirmation
       // Add success notification here
     } catch (error) {
       console.error('Claim error:', error);
@@ -297,11 +299,7 @@ export default function RWADetail() {
       const tx = await contract.extendDeadline(additionalDays);
       await tx.wait();
       console.log('Deadline extended transaction:', tx);
-
-      // Fetch the status again after transaction success
-      // Assuming you have a function to refetch the data
-      // refetchData();
-
+      refetchData(); // Refetch data after transaction confirmation
       // Add success notification here
     } catch (error) {
       console.error('Error extending deadline:', error);
@@ -311,19 +309,17 @@ export default function RWADetail() {
     }
   };
 
-  const handleInvest = async () => {
-    // if (!isConnected) {
-    //   console.log('Wallet not connected. Attempting to connect...');
-    //   connect({ connector: injected() });
-    //   return;
-    // }
+  const [isInvesting, setIsInvesting] = useState(false); // New state for tracking investment process
 
+  const handleInvest = async () => {
     if (!fundraising || !fundraising.address) {
       console.error('Fundraising data or address is missing.');
       return;
     }
 
     try {
+      setIsInvesting(true); // Set investing state to true
+
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
 
@@ -377,12 +373,15 @@ export default function RWADetail() {
       );
       await investTx.wait();
       console.log('Invest transaction sent:', investTx);
-      // alert('Invest transaction sent! Please confirm in MetaMask.');
+      refetchData(); // Refetch data after transaction confirmation
     } catch (error) {
       console.error('Error during investment:', error);
       alert('Error during investment. Check console for details.');
+    } finally {
+      setIsInvesting(false); // Reset investing state
     }
   };
+
   const validateInvestment = (amount: string) => {
     try {
       const value = parseEther(amount);
@@ -449,7 +448,7 @@ export default function RWADetail() {
 
   console.log('fundraising', fundraising);
   // Sort investments by timestamp (most recent first)
-  const sortedInvestments = [...fundraising.investments].sort(
+  const sortedInvestments = [...fundraising?.investments].sort(
     (a, b) => parseInt(b.timestamp) - parseInt(a.timestamp)
   );
 
@@ -763,18 +762,16 @@ export default function RWADetail() {
                       <div className='flex items-center gap-2'>
                         <span
                           className={`px-3 py-1 rounded-full text-sm ${
-                            investment.claimed ||
-                            (userInvestment === 0 && !fundraising.isCompleted)
+                            investment.claimed && fundraising.isCompleted
                               ? 'bg-green-900/20 text-green-400'
-                              : userInvestment === 0 && fundraising.isCompleted
+                              : userInvestment === 0 && !fundraising.isCompleted
                               ? 'bg-blue-900/20 text-blue-400'
                               : 'bg-yellow-900/20 text-yellow-400'
                           }`}
                         >
-                          {investment.claimed ||
-                          (userInvestment === 0 && !fundraising.isCompleted)
+                          {investment.claimed && fundraising.isCompleted
                             ? 'Claimed'
-                            : userInvestment === 0 && fundraising.isCompleted
+                            : !investment.claimed && userInvestment === 0
                             ? 'Withdrawn'
                             : 'Pending'}
                         </span>
@@ -801,7 +798,9 @@ export default function RWADetail() {
                             {fundraising.isCompleted && !investment.claimed && (
                               <button
                                 onClick={() => handleClaim()}
-                                disabled={isContractWriting}
+                                disabled={
+                                  isContractWriting || investment.claimed
+                                }
                                 className='px-3 py-1 bg-prime-gold/20 text-prime-gold rounded-full
                                          hover:bg-prime-gold/30 transition-colors duration-300 text-sm
                                          disabled:opacity-50'
@@ -1072,19 +1071,23 @@ export default function RWADetail() {
 
             <button
               disabled={
-                !investAmount || !validateInvestment(investAmount).isValid
+                !investAmount ||
+                !validateInvestment(investAmount).isValid ||
+                isInvesting
               }
               onClick={handleInvest}
               className={`w-full px-6 py-3 rounded mt-6
                 ${
-                  !investAmount || !validateInvestment(investAmount).isValid
+                  !investAmount ||
+                  !validateInvestment(investAmount).isValid ||
+                  isInvesting
                     ? 'bg-gray-500 cursor-not-allowed'
                     : 'bg-gradient-to-r from-prime-gold to-prime-gold/80 hover:from-prime-gold/90 hover:to-prime-gold/70'
                 }
                 text-prime-black font-medium uppercase tracking-wider
                 transition-all duration-300`}
             >
-              Confirm Investment
+              {isInvesting ? 'Processing...' : 'Confirm Investment'}
             </button>
           </div>
         </div>
