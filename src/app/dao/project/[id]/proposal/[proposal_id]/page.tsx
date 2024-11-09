@@ -13,6 +13,28 @@ import Loading from '@/components/layout/loading/loading';
 
 type VoteOption = 'for' | 'against' | 'abstain';
 
+enum ProposalType {
+    OffChain = 0,
+    OnChain = 1,
+    TransferFunds = 2,
+    Fundraising = 3
+}
+
+const getProposalTypeLabel = (type: ProposalType) => {
+    switch (type) {
+        case ProposalType.OffChain:
+            return 'Off-Chain';
+        case ProposalType.OnChain:
+            return 'On-Chain';
+        case ProposalType.TransferFunds:
+            return 'Transfer Funds';
+        case ProposalType.Fundraising:
+            return 'Fundraising';
+        default:
+            return 'Unknown';
+    }
+};
+
 const VoteModal = ({
   isOpen,
   onClose,

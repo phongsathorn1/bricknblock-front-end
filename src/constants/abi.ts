@@ -387,9 +387,39 @@ export const DAO_PROPOSALS_ABI = [
       },
     ],
     stateMutability: 'view',
-    type: 'function',
+    type: 'function'
   },
-];
+  {
+    inputs: [
+      { internalType: 'address', name: 'propertyToken', type: 'address' },
+      { internalType: 'uint256', name: 'proposalId', type: 'uint256' }
+    ],
+    name: 'getProposalState',
+    outputs: [{ internalType: 'enum PropertyGovernance.ProposalState', name: '', type: 'uint8' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [
+      { internalType: 'address', name: 'propertyToken', type: 'address' },
+      { internalType: 'uint256', name: 'proposalId', type: 'uint256' }
+    ],
+    name: 'skipVotingDelay',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  },
+  {
+    inputs: [
+      { internalType: 'address', name: 'propertyToken', type: 'address' },
+      { internalType: 'uint256', name: 'proposalId', type: 'uint256' }
+    ],
+    name: 'skipVotingPeriod',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  }
+]
 
 export const PROPERTY_TOKEN_ABI = [
   {
