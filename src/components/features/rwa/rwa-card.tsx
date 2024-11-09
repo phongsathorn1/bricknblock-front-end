@@ -38,6 +38,11 @@ export function RWACard({ item }: { item: RWADetailProps }) {
   const [timeLeft, setTimeLeft] = useState('');
 
   useEffect(() => {
+    if (item.status === 'Completed') {
+      setTimeLeft('Completed');
+      return; // Exit early if the status is "Completed"
+    }
+
     const calculateTimeLeft = () => {
       const deadlineDate = new Date(parseInt(item.deadline) * 1000);
       const now = new Date();
@@ -58,7 +63,7 @@ export function RWACard({ item }: { item: RWADetailProps }) {
     const timer = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(timer);
-  }, [item.deadline]);
+  }, [item.deadline, item.status]);
 
   const formatPrice = (price: number) => {
     if (price >= 1000000) {

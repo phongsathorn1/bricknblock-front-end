@@ -116,15 +116,60 @@ export default function RWADetail() {
   const [address, setAddress] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedAddress = localStorage.getItem('address');
-    if (storedAddress) {
-      setAddress(storedAddress);
-    }
+    const fetchBalance = async () => {
+      try {
+        const storedAddress = localStorage.getItem('address');
+        if (storedAddress) {
+          setAddress(storedAddress);
+
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          const usdtContract = new ethers.Contract(
+            CONTRACT_ADDRESSES.USDT,
+            [
+              // ERC20 ABI for balanceOf function
+              {
+                constant: true,
+                inputs: [{ name: '_owner', type: 'address' }],
+                name: 'balanceOf',
+                outputs: [{ name: 'balance', type: 'uint256' }],
+                type: 'function',
+              },
+            ],
+            provider
+          );
+
+          const balance = await usdtContract.balanceOf(storedAddress);
+          setUserBalance(parseFloat(ethers.utils.formatUnits(balance, 18)));
+        }
+      } catch (error) {
+        console.error('Error fetching balance:', error);
+      }
+    };
+
+    fetchBalance();
   }, []);
+
   const [showDetails, setShowDetails] = useState(true);
   const [showAmenities, setShowAmenities] = useState(true);
   const [showInvestModal, setShowInvestModal] = useState(false);
   const [investAmount, setInvestAmount] = useState('');
+  const [userBalance, setUserBalance] = useState(0);
+
+  const handleMaxClick = () => {
+    const maxInvestment = parseFloat(
+      formatEther(BigInt(fundraising.maxInvestment))
+    );
+    const maxAmount = Math.min(userBalance, maxInvestment);
+    setInvestAmount(maxAmount.toString());
+  };
+
+  const handleInvestAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (parseFloat(value) <= userBalance) {
+      setInvestAmount(value);
+    }
+  };
+
   // Ensure hooks are not conditionally called
   const mockRWADetail = mockRWADetails['1'];
   const fundraising = data?.fundraisings?.find(
@@ -133,6 +178,26 @@ export default function RWADetail() {
 
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [userInvestment, setUserInvestment] = useState(0);
+
+  useEffect(() => {
+    // Fetch user investment amount
+    const fetchUserInvestment = () => {
+      if (fundraising && address) {
+        const userInvestmentData = fundraising.investments.find(
+          (investment: any) =>
+            investment.investor.toLowerCase() === address.toLowerCase()
+        );
+        if (userInvestmentData) {
+          setUserInvestment(
+            parseFloat(ethers.utils.formatUnits(userInvestmentData.amount, 18))
+          );
+        }
+      }
+    };
+
+    fetchUserInvestment();
+  }, [fundraising, address]);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -141,6 +206,7 @@ export default function RWADetail() {
 
   const handleWithdraw = async () => {
     try {
+      setIsContractWriting(true); // Disable the button and show "Withdrawing..."
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
       const contract = new ethers.Contract(
@@ -158,6 +224,8 @@ export default function RWADetail() {
     } catch (error) {
       console.error('Withdrawal error:', error);
       // Add error notification here
+    } finally {
+      setIsContractWriting(false); // Re-enable the button
     }
   };
 
@@ -280,14 +348,14 @@ export default function RWADetail() {
 
       const approveTx = await usdtContract.approve(
         fundraising.address,
-        fundraising.minInvestment
+        parseEther(investAmount)
       );
       await approveTx.wait();
       console.log('USDT approved:', approveTx);
 
       console.log(
         'Attempting to send invest transaction...',
-        fundraising.minInvestment,
+        parseEther(investAmount),
         fundraising.address
       );
 
@@ -297,12 +365,19 @@ export default function RWADetail() {
         signer
       );
 
-      const investTx = await fundraisingContract.invest(
+      const gasEstimate = await fundraisingContract.estimateGas.invest(
         parseEther(investAmount)
+      );
+      console.log('Estimated Gas:', gasEstimate.toString());
+
+      // Send invest transaction with estimated gas
+      const investTx = await fundraisingContract.invest(
+        parseEther(investAmount),
+        { gasLimit: gasEstimate }
       );
       await investTx.wait();
       console.log('Invest transaction sent:', investTx);
-      alert('Invest transaction sent! Please confirm in MetaMask.');
+      // alert('Invest transaction sent! Please confirm in MetaMask.');
     } catch (error) {
       console.error('Error during investment:', error);
       alert('Error during investment. Check console for details.');
@@ -328,6 +403,19 @@ export default function RWADetail() {
       };
     } catch {
       return { isValid: false, error: 'Invalid amount' };
+    }
+  };
+
+  const handleMaxWithdrawClick = () => {
+    setWithdrawAmount(userInvestment.toString());
+  };
+
+  const handleWithdrawAmountChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.value;
+    if (parseFloat(value) <= userInvestment) {
+      setWithdrawAmount(value);
     }
   };
 
@@ -675,19 +763,28 @@ export default function RWADetail() {
                       <div className='flex items-center gap-2'>
                         <span
                           className={`px-3 py-1 rounded-full text-sm ${
-                            investment.claimed
+                            investment.claimed ||
+                            (userInvestment === 0 && !fundraising.isCompleted)
                               ? 'bg-green-900/20 text-green-400'
+                              : userInvestment === 0 && fundraising.isCompleted
+                              ? 'bg-blue-900/20 text-blue-400'
                               : 'bg-yellow-900/20 text-yellow-400'
                           }`}
                         >
-                          {investment.claimed ? 'Claimed' : 'Pending'}
+                          {investment.claimed ||
+                          (userInvestment === 0 && !fundraising.isCompleted)
+                            ? 'Claimed'
+                            : userInvestment === 0 && fundraising.isCompleted
+                            ? 'Withdrawn'
+                            : 'Pending'}
                         </span>
 
                         {address?.toLowerCase() ===
                           investment.investor.toLowerCase() && (
                           <>
                             {!investment.claimed &&
-                              !fundraising.isCompleted && (
+                              !fundraising.isCompleted &&
+                              userInvestment > 0 && (
                                 <button
                                   onClick={() => setShowWithdrawModal(true)}
                                   disabled={isContractWriting}
@@ -696,7 +793,7 @@ export default function RWADetail() {
                                          disabled:opacity-50'
                                 >
                                   {isContractWriting
-                                    ? 'Processing...'
+                                    ? 'Withdrawing...'
                                     : 'Withdraw'}
                                 </button>
                               )}
@@ -928,6 +1025,12 @@ export default function RWADetail() {
                     {formatEther(getRemainingAmount())} USDT
                   </span>
                 </div>
+                <div className='flex justify-between text-sm'>
+                  <span className='text-text-secondary'>Your Balance</span>
+                  <span className='text-text-primary'>
+                    {userBalance.toLocaleString()} USDT
+                  </span>
+                </div>
               </div>
 
               <div className='w-full'>
@@ -935,7 +1038,7 @@ export default function RWADetail() {
                   <input
                     type='number'
                     value={investAmount}
-                    onChange={(e) => setInvestAmount(e.target.value)}
+                    onChange={handleInvestAmountChange}
                     placeholder='Enter amount'
                     className='w-full px-4 py-3 bg-prime-black border border-prime-gold/10 rounded
                              text-text-primary placeholder-text-secondary/50 focus:outline-none
@@ -945,6 +1048,13 @@ export default function RWADetail() {
                   <span className='absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary'>
                     USDT
                   </span>
+                  <button
+                    onClick={handleMaxClick}
+                    className='absolute right-16 top-1/2 -translate-y-1/2 bg-prime-gray/20 border border-prime-gray/30 
+                               rounded-lg text-text-primary px-2 py-1'
+                  >
+                    Max
+                  </button>
                 </div>
                 {investAmount && (
                   <div
@@ -1014,7 +1124,7 @@ export default function RWADetail() {
                   <input
                     type='number'
                     value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                    onChange={handleWithdrawAmountChange}
                     placeholder='Enter amount'
                     className='w-full px-4 py-3 bg-prime-black border border-prime-gold/10 rounded
                              text-text-primary placeholder-text-secondary/50 focus:outline-none
@@ -1024,6 +1134,13 @@ export default function RWADetail() {
                   <span className='absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary'>
                     USDT
                   </span>
+                  <button
+                    onClick={handleMaxWithdrawClick}
+                    className='absolute right-16 top-1/2 -translate-y-1/2 bg-prime-gray/20 border border-prime-gray/30 
+                               rounded-lg text-text-primary px-2 py-1'
+                  >
+                    Max
+                  </button>
                 </div>
               </div>
             </div>

@@ -266,14 +266,14 @@ export default function CreateRWA() {
                 currentStep >= 0 ? 'text-prime-gold' : 'text-text-secondary'
               }
             >
-              Mint NFT
+              Tokenize your property
             </span>
             <span
               className={
                 currentStep >= 1 ? 'text-prime-gold' : 'text-text-secondary'
               }
             >
-              Approve NFT and Create Fundraising
+              Confirm and Create Fundraising
             </span>
           </div>
           <div className='flex'>
@@ -290,14 +290,14 @@ export default function CreateRWA() {
           <div>
             {/* Mint NFT Step */}
             <h2 className='font-display text-xl uppercase tracking-wider text-text-primary'>
-              Mint NFT
+              Tokenize your property
             </h2>
             {/* Form */}
             <form className='space-y-8'>
               {/* Basic Information */}
               <div className='space-y-6'>
                 <h2 className='font-display text-xl uppercase tracking-wider text-text-primary'>
-                  Basic Information
+                  {/* Basic Information */}
                 </h2>
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                   <div className='space-y-2'>
@@ -549,7 +549,7 @@ export default function CreateRWA() {
                     : ''
                 }`}
             >
-              {isPending ? 'Processing...' : 'Mint NFT'}
+              {isPending ? 'Processing...' : 'Tokenize your property'}
             </button>
           </div>
         )}
@@ -558,7 +558,7 @@ export default function CreateRWA() {
           <div>
             {/* Approve and Create Fundraising Step */}
             <h2 className='font-display text-xl uppercase tracking-wider text-text-primary'>
-              Approve NFT and Create Fundraising
+              Confirm and Create Fundraising
             </h2>
 
             {/* Display Form Data in a Paper-like Box */}
