@@ -237,12 +237,36 @@ const FundraisingDaoBlock = ({
   );
 
   console.log('fundraisingDao', data);
+  const handleClaim = async () => {
+    try {
+      if (!window.ethereum) {
+        alert('MetaMask is not installed. Please install it to continue.');
+        return;
+      }
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+ 
+      const fundraisingDaoContract = new ethers.Contract(
+        factoryFundraisingDaoAddress || '',
+        FUNDRAISING_DAO_ABI,
+        signer
+      )
+      
+      const claimResult = await fundraisingDaoContract.claimTokens()s
+     
+    } catch (error) {
+      console.error('Error Claim token:', error)
+    } finally {
+       
+    }
+  };
 
+  
   return (
     data?.fundraisingDao && (
-      <div className='mt-8 p-6 card-prime rounded-lg border border-prime-gray/30'>
-        <div className='flex justify-between items-center mb-4'>
-          <h3 className='text-xl font-medium text-text-primary'>
+      <div className="mt-8 p-6 card-prime rounded-lg border border-prime-gray/30">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-medium text-text-primary">
             Fundraising DAO Details
           </h3>
           <span
@@ -255,10 +279,10 @@ const FundraisingDaoBlock = ({
             {data?.fundraisingDao.isCompleted ? 'Completed' : 'In Progress'}
           </span>
         </div>
-        <div className='space-y-4'>
+        <div className="space-y-4">
           <div>
-            <p className='text-text-secondary'>Target Amount</p>
-            <p className='text-text-primary text-2xl font-medium'>
+            <p className="text-text-secondary">Target Amount</p>
+            <p className="text-text-primary text-2xl font-medium">
               {ethers.utils.formatUnits(
                 data?.fundraisingDao.goalAmount || 0,
                 18
@@ -267,8 +291,8 @@ const FundraisingDaoBlock = ({
             </p>
           </div>
           <div>
-            <p className='text-text-secondary'>Current Amount</p>
-            <p className='text-text-primary text-2xl font-medium'>
+            <p className="text-text-secondary">Current Amount</p>
+            <p className="text-text-primary text-2xl font-medium">
               {ethers.utils.formatUnits(
                 data?.fundraisingDao.totalRaised || 0,
                 18
@@ -276,9 +300,9 @@ const FundraisingDaoBlock = ({
               USDT
             </p>
           </div>
-          <div className='w-full bg-stone-700 rounded-full h-4'>
+          <div className="w-full bg-stone-700 rounded-full h-4">
             <div
-              className='bg-gradient-to-r from-prime-gold to-prime-gold/80 h-4 rounded-full'
+              className="bg-gradient-to-r from-prime-gold to-prime-gold/80 h-4 rounded-full"
               style={{
                 width: `${Math.min(
                   ((Number(data?.fundraisingDao.totalRaised) || 0) /
@@ -289,7 +313,7 @@ const FundraisingDaoBlock = ({
               }}
             ></div>
           </div>
-          <div className='flex justify-between text-sm text-text-secondary'>
+          <div className="flex justify-between text-sm text-text-secondary">
             <span>
               {Math.round(
                 (Number(data?.fundraisingDao.totalRaised || 0) /
@@ -300,20 +324,28 @@ const FundraisingDaoBlock = ({
             </span>
           </div>
           {data?.fundraisingDao.isCompleted ? (
-            <div className='text-text-secondary text-sm'>
-              Treasury Address:{' '}
-              <a
-                href={`https://testnet.bscscan.com/address/${projectId}`}
-                target='_blank'
-                className='text-prime-gold hover:text-prime-gold/80 transition-colors duration-200'
+            <>
+              <div className="text-text-secondary text-sm">
+                Treasury Address:{' '}
+                <a
+                  href={`https://testnet.bscscan.com/address/${projectId}`}
+                  target="_blank"
+                  className="text-prime-gold hover:text-prime-gold/80 transition-colors duration-200"
+                >
+                  {projectId}
+                </a>
+              </div>
+              <button
+                onClick={() => handleClaim()}
+                className="w-full px-6 py-3 bg-gradient-to-r from-prime-gold to-prime-gold/80 text-prime-black font-medium rounded hover:from-prime-gold/90 hover:to-prime-gold/70 transition-all duration-300"
               >
-                {projectId}
-              </a>
-            </div>
+                Claim token
+              </button>
+            </>
           ) : (
             <button
               onClick={() => setIsFundModalOpen(true)}
-              className='w-full px-6 py-3 bg-gradient-to-r from-prime-gold to-prime-gold/80 text-prime-black font-medium rounded hover:from-prime-gold/90 hover:to-prime-gold/70 transition-all duration-300'
+              className="w-full px-6 py-3 bg-gradient-to-r from-prime-gold to-prime-gold/80 text-prime-black font-medium rounded hover:from-prime-gold/90 hover:to-prime-gold/70 transition-all duration-300"
             >
               Contribute Funds
             </button>
@@ -321,7 +353,7 @@ const FundraisingDaoBlock = ({
         </div>
       </div>
     )
-  );
+  )
 };
 
 const FundModal = ({
@@ -767,6 +799,9 @@ export default function ProposalPage() {
       setIsWaitingModalOpen(false);
     }
   };
+
+
+
 
   return (
     <div className='min-h-screen bg-prime-black'>
