@@ -11,6 +11,7 @@ import { formatEther, parseEther, parseUnits } from 'viem';
 import { useEffect, useState } from 'react';
 import {
   DAO_PROPOSALS_ABI,
+  NFT_ABI,
   PROPERTY_TOKEN_ABI,
   REAL_ESTATE_FUNDRAISING_ABI,
 } from '@/constants/abi';
