@@ -636,6 +636,15 @@ export default function CreateRWA() {
                 <div className='flex justify-between'>
                   <strong>Documents:</strong> <span>{formData.documents}</span>
                 </div>
+                <div className='flex justify-center mt-16'>
+                  <Image
+                    src={imagePreview}
+                    alt='Preview'
+                    width={400}
+                    height={400}
+                    className='object-cover'
+                  />
+                </div>
               </div>
             </div>
 
