@@ -97,18 +97,16 @@ export default function ListedRWA() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder='Search by name or location...'
-            className='px-4 py-2 bg-prime-gray border border-prime-gold/10 
-                     rounded text-text-primary placeholder-text-secondary/50
-                     focus:outline-none focus:border-prime-gold/30
-                     transition-all duration-300 w-64'
+            className='w-full px-4 py-3 bg-prime-gray/20 border border-prime-gray/30 
+                       rounded-lg text-text-primary focus:outline-none focus:border-prime-gold
+                       transition-colors duration-200'
           />
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className='px-4 py-2 bg-prime-gray border border-prime-gold/10 
-                           rounded text-text-primary
-                           focus:outline-none focus:border-prime-gold/30
-                           transition-all duration-300'
+            className='w-full px-4 py-3 bg-prime-gray/20 border border-prime-gray/30 
+                       rounded-lg text-text-primary focus:outline-none focus:border-prime-gold
+                       transition-colors duration-200'
           >
             <option value=''>All Categories</option>
             <option value='Residential'>Residential</option>
