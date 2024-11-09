@@ -94,7 +94,7 @@ export const GET_RWA_BY_ID = (id: string) => gql`
 
 export const GET_MY_PROPERTIES = (walletAddress: string) => gql`
   query {
-    propertyTokens(first: 10, where: {holders_: {address: "${walletAddress}"}}) {
+    propertyTokens(first: 1000, where: {holders_: {address: "${walletAddress}"}}) {
       address
       createdAt
       id
@@ -119,7 +119,7 @@ export const GET_MY_PROPERTIES = (walletAddress: string) => gql`
 
 export const GET_PROPOSALS = (projectId: string) => gql`
   query {
-    proposals(where: {propertyToken_: {address: "${projectId}"}}) {
+    proposals(first: 1000,where: {propertyToken_: {address: "${projectId}"}}) {
       againstVotes
       callData
       createdAt
@@ -183,16 +183,46 @@ export const GET_PROPOSAL_BY_ID = (proposalId: string) => gql`
 `;
 
 export const GET_VOTING_POWER = (tokenAddress: string, walletAddress: string) => gql`
-  query MyQuery($address: Bytes = "${walletAddress}") {
+  query {
     propertyToken(id: "${tokenAddress}") {
-      address
-      id
-      symbol
       name
-      holders(where: {address: $address}) {
-        balance
-        address
-        votingPower
+      balances(
+        where: {holder_: {address: "${walletAddress}"}}
+      ) {
+        holder {
+          votingPower
+          id
+          delegatedTo
+          address
+          balances {
+            balance
+          }
+        }
+      }
+      symbol
+    }
+  }
+`;
+
+export const GET_FUNDRAISING_DAO_BY_ID = (id: string) => gql`
+  query MyQuery {
+    fundraisingDao(id: "${id}") {
+      address
+      createdAt
+      deadline
+      goalAmount
+      id
+      isCompleted
+      maxInvestment
+      minInvestment
+      proposalId
+      totalRaised
+      investments {
+        amount
+        claimed
+        id
+        investor
+        timestamp
       }
     }
   }
