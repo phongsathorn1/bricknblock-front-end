@@ -108,7 +108,7 @@ export default function RWADetail() {
   const { id } = params;
   const [refetchTrigger, setRefetchTrigger] = useState(false);
 
-  let { data, loading, error } = useGraphQuery<SubgraphResponse>(
+  const { data, loading, error } = useGraphQuery<SubgraphResponse>(
     GET_RWA_BY_ID(id as string),
     { refetchTrigger }
   );
