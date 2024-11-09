@@ -7,7 +7,7 @@ export const Footer = () => {
           {/* Brand Section */}
           <div className='space-y-4'>
             <h3 className='font-display text-xl uppercase tracking-wider text-text-primary'>
-              BrickNBlock
+              Brick'NBlock
             </h3>
             <p className='font-sans text-text-secondary text-sm leading-relaxed'>
               The world's first and largest real world asset marketplace
@@ -146,7 +146,7 @@ export const Footer = () => {
         <div className='pt-8 border-t border-prime-gold/10'>
           <div className='flex flex-col md:flex-row justify-between items-center gap-4'>
             <p className='text-text-secondary text-sm'>
-              © 2024 BrickNBlock. All rights reserved.
+              © 2024 Brick'NBlock . All rights reserved.
             </p>
             <div className='flex items-center gap-6'>
               <a

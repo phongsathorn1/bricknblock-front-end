@@ -37,7 +37,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: 'BrickNBlock',
+  title: "Brick'NBlock",
   description: 'Premium Real World Asset Investment Platform',
 };
 

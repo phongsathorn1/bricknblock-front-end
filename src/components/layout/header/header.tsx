@@ -106,7 +106,7 @@ export const Header = () => {
             className='opacity-90'
           />
           <span className='font-display text-xl tracking-wider uppercase text-text-primary'>
-            BrickNBlock
+            Brick'NBlock
           </span>
         </Link>
 

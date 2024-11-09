@@ -196,7 +196,7 @@ export default function CreateProposal() {
       const receipt = await proposalResult.wait();
       console.log('Receipt:', receipt);
 
-      // window.location.href = `/dao/project/${projectId}/`;
+      window.location.href = `/dao/project/${projectId}/`;
     } catch (error) {
       console.error('Error creating proposal:', error);
     } finally {
