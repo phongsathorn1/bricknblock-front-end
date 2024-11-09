@@ -235,6 +235,8 @@ export default function RWADetail() {
 
   const handleClaim = async () => {
     try {
+      setIsContractWriting(true); // Disable the button and show "Processing..."
+
       // Set up provider and signer
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
@@ -249,11 +251,14 @@ export default function RWADetail() {
       // Call the claimTokens function
       const transaction = await contract.claimTokens();
       console.log('Claim transaction:', transaction.hash);
+      await transaction.wait(); // Wait for the transaction to be confirmed
       refetchData(); // Refetch data after transaction confirmation
       // Add success notification here
     } catch (error) {
       console.error('Claim error:', error);
       // Add error notification here
+    } finally {
+      setIsContractWriting(false); // Re-enable the button
     }
   };
 
@@ -864,21 +869,17 @@ export default function RWADetail() {
                                 </button>
                               )}
 
-                            {fundraising.isCompleted && !investment.claimed && (
-                              <button
-                                onClick={() => handleClaim()}
-                                disabled={
-                                  isContractWriting || investment.claimed
-                                }
-                                className='px-3 py-1 bg-prime-gold/20 text-prime-gold rounded-full
-                                         hover:bg-prime-gold/30 transition-colors duration-300 text-sm
-                                         disabled:opacity-50'
-                              >
-                                {isContractWriting
-                                  ? 'Processing...'
-                                  : 'Claim Tokens'}
-                              </button>
-                            )}
+                            <button
+                              onClick={() => handleClaim()}
+                              disabled={isContractWriting || investment.claimed}
+                              className='px-3 py-1 bg-prime-gold/20 text-prime-gold rounded-full
+                                       hover:bg-prime-gold/30 transition-colors duration-300 text-sm
+                                       disabled:opacity-50'
+                            >
+                              {isContractWriting
+                                ? 'Processing...'
+                                : 'Claim Tokens'}
+                            </button>
                           </>
                         )}
                       </div>
