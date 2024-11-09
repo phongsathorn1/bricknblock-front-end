@@ -107,7 +107,7 @@ export default function RWADetail() {
   const { id } = params;
   const [refetchTrigger, setRefetchTrigger] = useState(false);
 
-  const { data, loading, error } = useGraphQuery<SubgraphResponse>(
+  let { data, loading, error } = useGraphQuery<SubgraphResponse>(
     GET_RWA_BY_ID(id as string),
     { refetchTrigger }
   );
@@ -490,6 +490,8 @@ export default function RWADetail() {
   //     setImageSrc(rwaDetail.image);
   //   }
   // }, [rwaDetail]);
+
+  const [prevData, setPrevData] = useState<SubgraphResponse | null>(null);
 
   if (loading) return <Loading />;
   if (error) return <div>Error loading data</div>;
