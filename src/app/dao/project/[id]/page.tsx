@@ -4,9 +4,13 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
-import { GET_PROPOSALS } from '@/lib/graphql/queries';
+import { GET_PROPOSALS, GET_DIVIDENDS } from '@/lib/graphql/queries';
 import { useGraphQuery } from '@/lib/hooks/useGraphQL';
 import Loading from '@/components/layout/loading/loading';
+import { ethers } from 'ethers';
+import { NFT_ABI, PROPERTY_TOKEN_ABI } from '@/constants/abi';
+import { CONTRACT_ADDRESSES } from '@/constants/contracts';
+import { parseEther } from 'ethers/lib/utils';
 
 export type Proposal = {
   id: string;
@@ -148,8 +152,20 @@ const ProposalCard = ({
 
 export default function DAO() {
   const [filter, setFilter] = useState<'all' | 'active' | 'closed'>('all');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDividendsModalOpen, setIsDividendsModalOpen] = useState(false);
+  const [usdtAmount, setUsdtAmount] = useState('');
+  const [claiming, setClaiming] = useState<number | null>(null);
   const params = useParams();
   const projectId = params.id;
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Fetch dividends data
+  const {
+    data: dividendsData,
+    loading: dividendsLoading,
+    error: dividendsError,
+  } = useGraphQuery(GET_DIVIDENDS(projectId as string));
 
   const getStatus = (state: number) => {
     switch (state) {
@@ -169,12 +185,105 @@ export default function DAO() {
     GET_PROPOSALS(projectId as string)
   );
 
+  // Log the dividends data
+  if (dividendsData) {
+    console.log('Dividends Data:', dividendsData);
+  }
+
+  // Handle loading and error states for dividends
+  if (dividendsLoading) return <Loading />;
+  if (dividendsError) return <div>Error: {dividendsError.message}</div>;
+
   if (loading) return <Loading />;
   if (error) return <div>Error: {error.message}</div>;
 
   const filteredProposals = data?.proposals.filter((proposal) =>
     filter === 'all' ? true : getStatus(proposal.state) === filter
   );
+
+  const handleAddYield = async () => {
+    setIsProcessing(true);
+    console.log('Adding yield:', usdtAmount);
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+
+    const usdtContract = new ethers.Contract(
+      CONTRACT_ADDRESSES.USDT,
+      [
+        // ERC20 ABI for approve function
+        {
+          constant: false,
+          inputs: [
+            { name: '_spender', type: 'address' },
+            { name: '_value', type: 'uint256' },
+          ],
+          name: 'approve',
+          outputs: [{ name: '', type: 'bool' }],
+          type: 'function',
+        },
+      ],
+      signer
+    );
+    const amount = ethers.utils.parseUnits(usdtAmount, 18); // Convert usdtAmount to the appropriate units
+
+    try {
+      const approveTx = await usdtContract.approve(projectId as string, amount);
+      await approveTx.wait();
+      console.log('USDT approved:', approveTx);
+
+      const contract = new ethers.Contract(
+        projectId as string,
+        PROPERTY_TOKEN_ABI,
+        signer
+      );
+
+      // Call the distributeDividends function
+      const tx = await contract.distributeDividends(
+        CONTRACT_ADDRESSES.USDT,
+        amount
+      );
+      console.log('Transaction hash:', tx.hash);
+      // Wait for the transaction to be mined
+      const receipt = await tx.wait();
+      console.log('Transaction was mined in block:', receipt.blockNumber);
+
+      // Close the modal after successful transactions
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Error distributing dividends:', error);
+    } finally {
+      setIsProcessing(false); // Reset processing state
+    }
+  };
+
+  const handleClaimDividend = async (dividendIndex: number) => {
+    alert(dividendIndex);
+    setClaiming(dividendIndex);
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+
+    try {
+      const contract = new ethers.Contract(
+        projectId as string, // Assuming projectId is the contract address
+        PROPERTY_TOKEN_ABI, // Use the ABI that contains the claimDividend function
+        signer
+      );
+
+      // Call the claimDividend function on the contract
+      const tx = await contract.claimDividend(dividendIndex);
+      console.log('Transaction hash:', tx.hash);
+
+      // Wait for the transaction to be mined
+      const receipt = await tx.wait();
+      console.log('Transaction was mined in block:', receipt.blockNumber);
+
+      // Update the claimed status in your actual data source
+    } catch (error) {
+      console.error('Error claiming dividend:', error);
+    } finally {
+      setClaiming(null);
+    }
+  };
 
   return (
     <div className='min-h-screen bg-prime-black'>
@@ -189,16 +298,182 @@ export default function DAO() {
               Vote on important proposals and shape the future of the platform
             </p>
           </div>
-          <Link
-            href={`/dao/project/${projectId}/proposal/create`}
-            className='px-8 py-4 bg-gradient-to-r from-prime-gold to-prime-gold/80
-                     text-prime-black font-medium rounded
-                     hover:from-prime-gold/90 hover:to-prime-gold/70
-                     transition-all duration-300 uppercase tracking-wider'
-          >
-            Create Proposal
-          </Link>
+          <div className='flex gap-4'>
+            <Link
+              href={`/dao/project/${projectId}/proposal/create`}
+              className='px-8 py-4 bg-gradient-to-r from-prime-gold to-prime-gold/80
+                       text-prime-black font-medium rounded
+                       hover:from-prime-gold/90 hover:to-prime-gold/70
+                       transition-all duration-300 uppercase tracking-wider'
+            >
+              Create Proposal
+            </Link>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className='px-8 py-4 bg-gradient-to-r from-prime-gold to-prime-gold/80
+                       text-prime-black font-medium rounded
+                       hover:from-prime-gold/90 hover:to-prime-gold/70
+                       transition-all duration-300 uppercase tracking-wider'
+            >
+              Add Dividends
+            </button>
+            <button
+              onClick={() => setIsDividendsModalOpen(true)}
+              className='px-8 py-4 bg-gradient-to-r from-prime-gold to-prime-gold/80
+                       text-prime-black font-medium rounded
+                       hover:from-prime-gold/90 hover:to-prime-gold/70
+                       transition-all duration-300 uppercase tracking-wider'
+            >
+              Claim Dividends
+            </button>
+          </div>
         </div>
+
+        {/* Add Yield Modal */}
+        {isModalOpen && (
+          <div className='fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50'>
+            <div className='bg-prime-gray rounded-lg p-6 max-w-md w-full max-h-[90vh] flex flex-col'>
+              <div className='flex justify-between items-center mb-6'>
+                <h3 className='text-xl font-display uppercase tracking-wider text-text-primary'>
+                  Add Yield
+                </h3>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className='text-text-secondary hover:text-text-primary'
+                >
+                  <svg
+                    className='w-6 h-6'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth='2'
+                      d='M6 18L18 6M6 6l12 12'
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className='space-y-4 overflow-y-auto custom-scrollbar flex-grow pr-2'>
+                <div className='w-full'>
+                  <div className='relative w-full'>
+                    <input
+                      type='number'
+                      value={usdtAmount}
+                      onChange={(e) => setUsdtAmount(e.target.value)}
+                      placeholder='Enter amount'
+                      className='w-full px-4 py-3 bg-prime-black border border-prime-gold/10 rounded
+                               text-text-primary placeholder-text-secondary/50 focus:outline-none
+                               focus:border-prime-gold/30 box-border
+                               [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
+                    />
+                    <span className='absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary'>
+                      USDT
+                    </span>
+                  </div>
+                </div>
+                <div className='flex justify-end gap-4 mt-4'>
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className='px-4 py-2 bg-gray-300 rounded'
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAddYield}
+                    disabled={isProcessing}
+                    className={`px-4 py-2 ${
+                      isProcessing
+                        ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                        : 'bg-prime-gold text-prime-black rounded'
+                    }`}
+                  >
+                    {isProcessing ? 'Processing...' : 'Confirm'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Dividends Modal */}
+        {isDividendsModalOpen && (
+          <div className='fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50'>
+            <div className='bg-prime-gray rounded-lg p-6 max-w-md w-full max-h-[90vh] flex flex-col'>
+              <div className='flex justify-between items-center mb-6'>
+                <h3 className='text-xl font-display uppercase tracking-wider text-text-primary'>
+                  Claim Dividends
+                </h3>
+                <button
+                  onClick={() => setIsDividendsModalOpen(false)}
+                  className='text-text-secondary hover:text-text-primary'
+                >
+                  <svg
+                    className='w-6 h-6'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth='2'
+                      d='M6 18L18 6M6 6l12 12'
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className='space-y-4 overflow-y-auto custom-scrollbar flex-grow pr-2'>
+                {dividendsLoading && <p>Loading dividends...</p>}
+                {dividendsError && (
+                  <p>Error loading dividends: {dividendsError.message}</p>
+                )}
+                {dividendsData &&
+                  dividendsData.propertyToken.dividends.map(
+                    (dividend: any, index: number) => (
+                      <div
+                        key={dividend.id}
+                        className='p-4 bg-prime-black/30 rounded-lg space-y-2'
+                      >
+                        <div className='flex justify-between text-sm'>
+                          <span className='text-text-secondary'>Amount</span>
+                          <span className='text-text-primary'>
+                            {ethers.utils.formatEther(dividend.amount)} USDT
+                          </span>
+                        </div>
+                        <div className='flex justify-between text-sm'>
+                          <span className='text-text-secondary'>
+                            Total Claimed
+                          </span>
+                          <span className='text-text-primary'>
+                            {ethers.utils.formatEther(dividend.totalClaimed)}{' '}
+                            USDT
+                          </span>
+                        </div>
+                        <div className='flex justify-end'>
+                          <button
+                            onClick={() => handleClaimDividend(index)}
+                            disabled={claiming === index}
+                            className={`mt-2 px-4 py-2 rounded ${
+                              claiming === index
+                                ? 'bg-yellow-400 text-yellow-900 cursor-not-allowed'
+                                : 'bg-prime-gold text-prime-black'
+                            }`}
+                          >
+                            {claiming === index ? 'Processing...' : 'Claim'}
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <div className='flex gap-4 mb-8'>

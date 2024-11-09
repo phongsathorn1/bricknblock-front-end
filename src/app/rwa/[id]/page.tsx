@@ -869,17 +869,21 @@ export default function RWADetail() {
                                 </button>
                               )}
 
-                            <button
-                              onClick={() => handleClaim()}
-                              disabled={isContractWriting || investment.claimed}
-                              className='px-3 py-1 bg-prime-gold/20 text-prime-gold rounded-full
-                                       hover:bg-prime-gold/30 transition-colors duration-300 text-sm
-                                       disabled:opacity-50'
-                            >
-                              {isContractWriting
-                                ? 'Processing...'
-                                : 'Claim Tokens'}
-                            </button>
+                            {fundraising.isCompleted && !investment.claimed && (
+                              <button
+                                onClick={() => handleClaim()}
+                                disabled={
+                                  isContractWriting || investment.claimed
+                                }
+                                className='px-3 py-1 bg-prime-gold/20 text-prime-gold rounded-full
+                                         hover:bg-prime-gold/30 transition-colors duration-300 text-sm
+                                         disabled:opacity-50'
+                              >
+                                {isContractWriting
+                                  ? 'Processing...'
+                                  : 'Claim Tokens'}
+                              </button>
+                            )}
                           </>
                         )}
                       </div>

@@ -1,5 +1,29 @@
 import { gql } from '@apollo/client';
 
+export const GET_DIVIDENDS = (id: string) => gql`
+{
+    propertyToken(id:"${id}"){
+    name
+    symbol
+    address
+    dividends{
+      id
+      totalClaimed
+      amount
+      timestamp
+      claims{
+        id
+        timestamp
+        amount
+        holder{
+          address
+        }
+      }
+    }
+  }
+}
+`;
+
 export const GET_RWA_TOKENS = gql`
   query {
     fundraisings(first: 100) {
