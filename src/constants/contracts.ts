@@ -16,11 +16,20 @@
 //   FactoryToken: '0x4a3115294Dc06A130fa9B825627b2BafC076ee4b', // Updated address
 // };
 
+// export const CONTRACT_ADDRESSES = {
+//   USDT: '0x776Ded774F25A3f353763aC174A4F4C11a6deC39',
+//   NFT: '0x71353005930B49805df867D75C1610092070F3cc', // Updated address
+//   FactoryFundraising: '0xfEb148017401503cB0726BC3875FcE01e51204f7', // Updated address
+//   PropertyGovernance: '0xF038D6dBead9aB4f83e4Cf955464132048Bf15BA', // Updated address
+//   FactoryFundraisingDao: '0x188d97f93F594914792d3592033Dee5c637302fD', // Updated address
+//   FactoryToken: '0x4e048Db12B5769fa06A5bF5df65B806a1AE2c6d3', // Updated address
+// };
+
 export const CONTRACT_ADDRESSES = {
   USDT: '0x776Ded774F25A3f353763aC174A4F4C11a6deC39',
   NFT: '0x71353005930B49805df867D75C1610092070F3cc', // Updated address
-  FactoryFundraising: '0xfEb148017401503cB0726BC3875FcE01e51204f7', // Updated address
-  PropertyGovernance: '0xF038D6dBead9aB4f83e4Cf955464132048Bf15BA', // Updated address
-  FactoryFundraisingDao: '0x188d97f93F594914792d3592033Dee5c637302fD', // Updated address
-  FactoryToken: '0x4e048Db12B5769fa06A5bF5df65B806a1AE2c6d3', // Updated address
+  FactoryFundraising: '0xB34e3DA3e1Cb266Ad048693b3CD9a1eff3850Bc2', // New deployed address
+  PropertyGovernance: '0x60962143Ea130bb806e4E4f89c2580f6A31f457A', // New deployed address
+  FactoryFundraisingDao: '0x145737D4641da44a76b846b6bc26cE037c19e391', // New deployed address
+  FactoryToken: '0xf64593Ff0cD457293D3400DD1F8C949F010e11d8', // New deployed address
 };
