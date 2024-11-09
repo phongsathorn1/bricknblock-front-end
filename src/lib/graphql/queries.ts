@@ -101,24 +101,26 @@ export const GET_RWA_BY_ID = (id: string) => gql`
 
 export const GET_MY_PROPERTIES = (walletAddress: string) => gql`
   query {
-    propertyTokens(first: 1000, where: {holders_: {address: "${walletAddress}"}}) {
-      address
-      createdAt
-      id
-      name
-      symbol
-      fundraising {
-        nft {
-          area
-          documents
-          id
-          isTokenized
-          location
-          owner
-          propertyType
-          tokenId
+    tokenHolder(id: "${walletAddress}") {
+      balances {
+        token {
+          address
+          nft {
+            area
+            documents
+            id
+            image
+            isTokenized
+            isVerified
+            location
+            name
+            owner
+            propertyType
+            tokenId
+          }
         }
       }
+      address
     }
   }
 `;

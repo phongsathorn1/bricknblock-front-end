@@ -153,10 +153,12 @@ const VoteModal = ({
 
 const FundraisingDaoBlock = ({
     setIsFundModalOpen,
-    factoryFundraisingDaoAddress
+    factoryFundraisingDaoAddress,
+    projectId
 }: {
     setIsFundModalOpen: any,
-    factoryFundraisingDaoAddress: string
+    factoryFundraisingDaoAddress: string,
+    projectId: string
 }) => {
     // const [signer, setSigner] = useState<ethers.Signer | null>(null);
     // const [isConnected, setIsConnected] = useState(false);
@@ -226,12 +228,18 @@ const FundraisingDaoBlock = ({
                     <div className="flex justify-between text-sm text-text-secondary">
                         <span>{Math.round((Number(data?.fundraisingDao.totalRaised || 0) / Number(data?.fundraisingDao.goalAmount || 0)) * 100)}% Funded</span>
                     </div>
-                    <button
-                        onClick={() => setIsFundModalOpen(true)}
-                        className="w-full px-6 py-3 bg-gradient-to-r from-prime-gold to-prime-gold/80 text-prime-black font-medium rounded hover:from-prime-gold/90 hover:to-prime-gold/70 transition-all duration-300"
-                    >
-                        Contribute Funds
-                    </button>
+                    {data?.fundraisingDao.isCompleted ? (
+                        <div className="text-text-secondary text-sm">
+                            Treasury Address: <a href={`https://testnet.bscscan.com/address/${projectId}`} target="_blank" className="text-prime-gold hover:text-prime-gold/80 transition-colors duration-200">{projectId}</a>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => setIsFundModalOpen(true)}
+                            className="w-full px-6 py-3 bg-gradient-to-r from-prime-gold to-prime-gold/80 text-prime-black font-medium rounded hover:from-prime-gold/90 hover:to-prime-gold/70 transition-all duration-300"
+                        >
+                            Contribute Funds
+                        </button>
+                    )}
                 </div>
             </div>
         )
@@ -710,7 +718,9 @@ export default function ProposalPage() {
 
                         {activeTab === 'proposal' ? (
                             <div className="prose prose-invert max-w-none mb-8">
-                                <p>{proposalData.detail}</p>
+                                <div className="pt-5 py-20 px-5 my-5 rounded-lg bg-stone-800">
+                                    <p>{proposalData.detail}</p>
+                                </div>
                                 {status === 'Succeeded' && (
                                     <button
                                         onClick={handleExecute}
@@ -720,7 +730,7 @@ export default function ProposalPage() {
                                     </button>
                                 )}
                                 {data.proposal.proposalType === ProposalType.Fundraising && status === 'Executed' && (
-                                    <FundraisingDaoBlock setIsFundModalOpen={setIsFundModalOpen} factoryFundraisingDaoAddress={factoryFundraisingDaoAddress || ''} setFactoryFundraisingDaoAddress={setFactoryFundraisingDaoAddress} />
+                                    <FundraisingDaoBlock setIsFundModalOpen={setIsFundModalOpen} factoryFundraisingDaoAddress={factoryFundraisingDaoAddress || ''} setFactoryFundraisingDaoAddress={setFactoryFundraisingDaoAddress} projectId={params.id as string} />
                                 )}
                             </div>
                         ) : activeTab === 'votes' ? (
@@ -762,6 +772,34 @@ export default function ProposalPage() {
                                     <div className="text-sm text-text-secondary">End Time</div>
                                     <div className="text-text-primary">{new Date(parseInt(data.proposal.endTime) * 1000).toLocaleString()}</div>
                                 </div>
+                                <div>
+                                    <div className="text-sm text-text-secondary">Duration</div>
+                                    <div className="text-text-primary">
+                                        {Math.ceil((parseInt(data.proposal.endTime) - parseInt(data.proposal.startTime)) / (24 * 60 * 60))} days
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-sm text-text-secondary">Proposal Type</div>
+                                    <div className="text-text-primary">
+                                        {getProposalTypeLabel(data.proposal.proposalType as ProposalType)}
+                                    </div>
+                                </div>
+                                {data.proposal.proposalType === ProposalType.TransferFunds && (
+                                    <>
+                                        <div>
+                                            <div className="text-sm text-text-secondary">Token Address</div>
+                                            <div className="text-text-primary break-words">{ethers.utils.defaultAbiCoder.decode(['address', 'address', 'uint256'], data.proposal.callData)[0]}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-sm text-text-secondary">Transfer To Wallet</div>
+                                            <div className="text-text-primary break-words">{ethers.utils.defaultAbiCoder.decode(['address', 'address', 'uint256'], data.proposal.callData)[1]}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-sm text-text-secondary">Amount</div>
+                                            <div className="text-text-primary break-words">{ethers.utils.formatEther(ethers.utils.defaultAbiCoder.decode(['address', 'address', 'uint256'], data.proposal.callData)[2])}</div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
 
@@ -809,31 +847,33 @@ export default function ProposalPage() {
                         </div>
 
                         {/* Cast Vote */}
-                        <div className="card-prime">
-                            <h3 className="text-lg font-medium text-text-primary mb-4">Cast your vote</h3>
-                            <div className="space-y-2">
-                                {(['for', 'against'] as const).map((option) => (
-                                    <button
-                                        key={option}
-                                        onClick={() => {
-                                            setSelectedVote(option);
-                                            setIsVoteModalOpen(true);
-                                        }}
-                                        className={`w-full p-4 rounded-lg border-2 ${selectedVote === option
-                                            ? option === 'for'
-                                                ? 'border-green-500 bg-green-500/20 text-green-400'
-                                                : 'border-red-500 bg-red-500/20 text-red-400'
-                                            : option === 'for'
-                                                ? 'border-green-500/50 hover:bg-green-500/10 text-green-500'
-                                                : 'border-red-500/50 hover:bg-red-500/10 text-red-500'
-                                            } transition-all duration-200 capitalize font-medium 
-                                        active:scale-[0.99] shadow-sm hover:shadow-md`}
-                                    >
-                                        {option}
-                                    </button>
-                                ))}
+                        {status === 'Active' && (
+                            <div className="card-prime">
+                                <h3 className="text-lg font-medium text-text-primary mb-4">Cast your vote</h3>
+                                <div className="space-y-2">
+                                    {(['for', 'against'] as const).map((option) => (
+                                        <button
+                                            key={option}
+                                            onClick={() => {
+                                                setSelectedVote(option);
+                                                setIsVoteModalOpen(true);
+                                            }}
+                                            className={`w-full p-4 rounded-lg border-2 ${selectedVote === option
+                                                ? option === 'for'
+                                                    ? 'border-green-500 bg-green-500/20 text-green-400'
+                                                    : 'border-red-500 bg-red-500/20 text-red-400'
+                                                : option === 'for'
+                                                    ? 'border-green-500/50 hover:bg-green-500/10 text-green-500'
+                                                    : 'border-red-500/50 hover:bg-red-500/10 text-red-500'
+                                                } transition-all duration-200 capitalize font-medium 
+                                            active:scale-[0.99] shadow-sm hover:shadow-md`}
+                                        >
+                                            {option}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>

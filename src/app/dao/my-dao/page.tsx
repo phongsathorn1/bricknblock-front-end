@@ -5,39 +5,44 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useGraphQuery } from '@/lib/hooks/useGraphQL';
 import { GET_MY_PROPERTIES } from '@/lib/graphql/queries';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faLocationDot } from '@fortawesome/free-solid-svg-icons';
 
-type Space = {
-    address: string;
-    createdAt: string;
+type NFT = {
+    area: string;
+    documents: string;
     id: string;
+    image: string;
+    isTokenized: boolean;
+    isVerified: boolean;
+    location: string;
     name: string;
-    symbol: string;
-    fundraising: {
-        nft: {
-            area: string;
-            documents: string;
-            id: string;
-            isTokenized: boolean;
-            location: string;
-            owner: string;
-            propertyType: string;
-            tokenId: string;
-        }
-    }
-};
+    owner: string;
+    propertyType: string;
+    tokenId: string;
+}
 
-const SpaceCard = ({ space }: { space: Space }) => {
-    // Use a default image for now since logo isn't in the Space type
-    const defaultImage = 'https://picsum.photos/200';
+type TokenHolder = {
+    balances: {
+        token: {
+            nft: NFT;
+            address: string;
+        };
+    }[];
+    address: string;
+}
+
+const SpaceCard = ({ nft, address }: { nft: NFT; address: string }) => {
+    const imageUrl = `https://gateway.pinata.cloud/ipfs/${nft.image}`;
 
     return (
         <Link
-            href={`project/${space.id}`}
+            href={`project/${address}`}
             className='group relative h-[400px] overflow-hidden rounded-xl'
         >
             <Image
-                src={defaultImage}
-                alt={space.name}
+                src={imageUrl}
+                alt={nft.name}
                 fill
                 className='object-cover transition-transform duration-700 group-hover:scale-105'
             />
@@ -47,11 +52,12 @@ const SpaceCard = ({ space }: { space: Space }) => {
             {/* Content */}
             <div className='absolute bottom-0 left-0 right-0 p-8'>
                 <div className='mb-4'>
-                    <h2 className='font-display text-3xl uppercase tracking-wider text-text-primary mb-2'>
-                        {space.fundraising.nft.location}
+                    <h2 className='font-display text-xl uppercase tracking-wider text-text-primary mb-2'>
+                        {nft.name}
                     </h2>
-                    <p className='text-text-secondary'>
-                        #{space.fundraising.nft.id}
+                    <p className='text-text-secondary flex items-center gap-2'>
+                        <FontAwesomeIcon icon={faLocationDot} className="w-4 h-4" />
+                        {nft.location}
                     </p>
                 </div>
 
@@ -70,10 +76,10 @@ const SpaceCard = ({ space }: { space: Space }) => {
                     </div>
                     <div className='flex justify-between text-sm'>
                         <span className='text-text-secondary'>
-                            Area: {space.fundraising.nft.area} sqft
+                            Area: {nft.area} sqft
                         </span>
                         <span className='text-text-secondary'>
-                            Type: {space.fundraising.nft.propertyType || 'Residential'}
+                            Type: {nft.propertyType || 'Residential'}
                         </span>
                     </div>
                 </div>
@@ -95,12 +101,13 @@ export default function ExploreDAOs() {
 
     const [searchTerm, setSearchTerm] = useState('');
     const { data, loading, error } =
-        useGraphQuery<{ propertyTokens: Space[] }>(GET_MY_PROPERTIES(address ?? ''));
+        useGraphQuery<{ tokenHolder: TokenHolder }>(GET_MY_PROPERTIES(address?.toLowerCase() ?? ''));
 
     console.log('data', data);
-    const filteredSpaces = data && data?.propertyTokens.filter(space => {
-        const matchesSearch = space.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            space.fundraising.nft.location.toLowerCase().includes(searchTerm.toLowerCase());
+    const filteredSpaces = data?.tokenHolder?.balances.filter(balance => {
+        const nft = balance.token.nft;
+        const matchesSearch = nft.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            nft.location.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesSearch;
     });
 
@@ -124,7 +131,7 @@ export default function ExploreDAOs() {
                         placeholder='Search DAOs...'
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className='w-full px-4 py-3 bg-prime-gray/20 border border-prime-gray/30 
+                        className='w-full px-4 py-3 bg-stone-700 border border-prime-gray 
                      rounded-lg text-text-primary focus:outline-none focus:border-prime-gold
                      transition-colors duration-200'
                     />
@@ -133,8 +140,12 @@ export default function ExploreDAOs() {
                 {/* Spaces Grid */}
                 {filteredSpaces && (
                     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-                        {filteredSpaces.map((space) => (
-                            <SpaceCard key={space.id} space={space} />
+                        {filteredSpaces.map((balance) => (
+                            <SpaceCard
+                                key={balance.token.nft.id}
+                                nft={balance.token.nft}
+                                address={balance.token.address ?? ''}
+                            />
                         ))}
                     </div>
                 )}

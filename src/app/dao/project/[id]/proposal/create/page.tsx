@@ -150,6 +150,7 @@ export default function CreateProposal() {
 
             setIsWaitingModalOpen(true);
             setWaitingMessage('Delegating voting power...');
+            console.log('signer.getAddress()', signer.getAddress(), 'projectId', projectId?.toString());
             const delegateResult = await DelegateContract.delegate(signer.getAddress());
             console.log('Delegate result:', delegateResult);
 
@@ -170,12 +171,13 @@ export default function CreateProposal() {
             const receipt = await proposalResult.wait();
             console.log('Receipt:', receipt);
 
+            // window.location.href = `/dao/project/${projectId}/`;
+
         } catch (error) {
             console.error('Error creating proposal:', error);
         } finally {
             setIsWaitingModalOpen(false);
             setIsPending(false); // Stop loading
-            window.location.href = `/dao/project/${projectId}/`;
         }
     };
 
