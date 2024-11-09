@@ -55,22 +55,27 @@ export default function ListedRWA() {
         status = 'Expired';
       }
 
+      console.log(fundraising);
+      // Determine if the gold badge should be shown
+
       return {
         id: fundraising.id,
         name:
-          fundraising.nft?.location + ' #' + fundraising.nft?.tokenId ||
+          fundraising.nft?.name + ' #' + fundraising.nft?.tokenId ||
           mockItem.name,
         location: fundraising.nft?.location || mockItem.location,
         raisedAmount,
         targetAmount,
         price: targetAmount.toString() || mockItem.price,
         currency: 'USDT',
-        image: mockItem.image,
+        // image: mockItem.image,
         status,
         type: fundraising.nft?.propertyType || mockItem.type,
         isCompleted: fundraising.isCompleted,
         deadline: fundraising.deadline,
         owner: fundraising.owner,
+        isVerified: fundraising.nft?.isVerified,
+        image: 'https://ipfs.io/ipfs/' + fundraising.nft?.image,
       };
     }) || mockRWAItems;
 

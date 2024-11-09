@@ -3,6 +3,7 @@ import { RWACardProps, RWADetailProps } from '@/lib/types/rwa';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { formatOwnerName, formatPrice } from '@/helper/styleHelper';
+import goldTickBadge from '@/assets/icons/gold-tick.png';
 
 const ProgressBar = ({
   raised,
@@ -35,8 +36,13 @@ const ProgressBar = ({
   );
 };
 
-export function RWACard({ item }: { item: RWADetailProps }) {
+export function RWACard({ item }: { item: RWACardProps }) {
   const [timeLeft, setTimeLeft] = useState('');
+  const [imageSrc, setImageSrc] = useState(item.image);
+
+  useEffect(() => {
+    setImageSrc(item.image);
+  }, [item.image]);
 
   useEffect(() => {
     if (item.status === 'Completed') {
@@ -65,6 +71,7 @@ export function RWACard({ item }: { item: RWADetailProps }) {
 
     return () => clearInterval(timer);
   }, [item.deadline, item.status]);
+  // console.log(item);
 
   return (
     <Link
@@ -90,10 +97,15 @@ export function RWACard({ item }: { item: RWADetailProps }) {
         {/* Image Container */}
         <div className='relative h-48 overflow-hidden'>
           <Image
-            src={item.image}
+            src={imageSrc}
             alt={item.name}
             fill
             className='object-cover group-hover:scale-105 transition-transform duration-500'
+            onError={() =>
+              setImageSrc(
+                'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800&auto=format&fit=crop&q=60'
+              )
+            }
           />
           {/* Countdown Timer */}
           <span className='absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded'>
@@ -130,11 +142,21 @@ export function RWACard({ item }: { item: RWADetailProps }) {
               />
             </svg>
             {item.location}
+            {/* Gold Tick Badge */}
+            {item.isVerified && (
+              <Image
+                src={goldTickBadge}
+                alt='Gold Tick Badge'
+                width={20}
+                height={20}
+                className='ml-1'
+                title='Verified Asset'
+              />
+            )}
           </p>
 
           {/* Spacer to push raised, progress bar, owner, and price to the bottom */}
           <div className='flex-grow'></div>
-
           {/* Raised and Progress Bar */}
           <div>
             <ProgressBar
@@ -147,7 +169,7 @@ export function RWACard({ item }: { item: RWADetailProps }) {
           {/* Owner and Price */}
           <div className='pt-3 border-t border-prime-gold/10 flex justify-between items-center'>
             <div className='flex items-center'>
-              <Image
+              {/* <Image
                 src={`https://randomuser.me/api/portraits/thumb/men/${Math.floor(
                   Math.random() * 100
                 )}.jpg`}
@@ -155,9 +177,9 @@ export function RWACard({ item }: { item: RWADetailProps }) {
                 width={32}
                 height={32}
                 className='rounded-full mr-2'
-              />
+              /> */}
               <span className='text-sm text-text-secondary'>
-                {formatOwnerName(item.owner)}
+                Owner: {formatOwnerName(item.owner)}
               </span>
             </div>
             <div>

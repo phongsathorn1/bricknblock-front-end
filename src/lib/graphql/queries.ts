@@ -12,6 +12,7 @@ export const GET_RWA_TOKENS = gql`
       deadline
       totalRaised
       isCompleted
+
       investments {
         id
         investor
@@ -28,6 +29,9 @@ export const GET_RWA_TOKENS = gql`
       }
       createdAt
       nft {
+        isVerified
+        image
+        name
         id
         tokenId
         owner
@@ -74,6 +78,9 @@ export const GET_RWA_BY_ID = (id: string) => gql`
       }
       createdAt
       nft {
+          isVerified
+        image
+        name
         id
         tokenId
         owner
@@ -115,7 +122,6 @@ export const GET_MY_PROPERTIES = (walletAddress: string) => gql`
     }
   }
 `;
-
 
 export const GET_PROPOSALS = (projectId: string) => gql`
   query {
@@ -182,7 +188,10 @@ export const GET_PROPOSAL_BY_ID = (proposalId: string) => gql`
   }
 `;
 
-export const GET_VOTING_POWER = (tokenAddress: string, walletAddress: string) => gql`
+export const GET_VOTING_POWER = (
+  tokenAddress: string,
+  walletAddress: string
+) => gql`
   query {
     propertyToken(id: "${tokenAddress}") {
       name

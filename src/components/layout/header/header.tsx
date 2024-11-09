@@ -52,8 +52,10 @@ export const Header = () => {
 
   // Filter RWAs by location based on search query
   const filteredRWAs = useMemo(() => {
-    return data?.fundraisings?.filter((rwa) =>
-      rwa.nft.location.toLowerCase().includes(searchQuery.toLowerCase())
+    return data?.fundraisings?.filter(
+      (rwa) =>
+        rwa.nft.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        rwa.nft.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [data, searchQuery]);
 
@@ -144,7 +146,7 @@ export const Header = () => {
             placeholder='Search by location'
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className='px-4 py-2 border border-prime-gold/20 rounded bg-prime-gray text-text-primary'
+            className='px-8 py-2 border border-prime-gold/20 rounded bg-prime-gray text-text-primary'
           />
 
           {/* Floating Dropdown List of Matching RWAs */}
@@ -157,7 +159,7 @@ export const Header = () => {
                     href={`/rwa/${rwa.address}`}
                     className='block px-4 py-2 text-text-secondary hover:bg-prime-gold/5'
                   >
-                    - {rwa.nft.location} #{rwa.nft.tokenId}
+                    {rwa.nft.name} - {rwa.nft.location}
                   </Link>
                 ))
               ) : (

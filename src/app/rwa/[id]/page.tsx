@@ -9,7 +9,7 @@ import { RWADetailProps } from '@/lib/types/rwa';
 import { formatDistanceToNow, fromUnixTime } from 'date-fns';
 import { formatEther, parseEther, parseUnits } from 'viem';
 import { useEffect, useState } from 'react';
-import { REAL_ESTATE_FUNDRAISING_ABI } from '@/constants/abi';
+import { NFT_ABI, REAL_ESTATE_FUNDRAISING_ABI } from '@/constants/abi';
 import { CONTRACT_ADDRESSES } from '@/constants/contracts';
 import { ethers } from 'ethers';
 import bscscanLogo from '@/assets/icons/bscscan-logo.png';
@@ -17,6 +17,7 @@ import Loading from '@/components/layout/loading/loading';
 import React from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import goldTickBadge from '@/assets/icons/gold-tick.png';
 
 const getRWADetail = (
   fundraising: any,
@@ -38,14 +39,15 @@ const getRWADetail = (
       // Basic info from RWACardProps
       id: fundraising.id,
       name:
-        fundraising.nft?.location + ' #' + fundraising.nft?.tokenId ||
+        fundraising.nft?.name + ' #' + fundraising.nft?.tokenId ||
         mockDetail.name,
       location: fundraising.nft?.location || mockDetail.location,
       raisedAmount: fromWei(fundraising.totalRaised),
       targetAmount: fromWei(fundraising.goalAmount),
       price: fromWei(fundraising.minInvestment).toString() || mockDetail.price,
       currency: 'USDT',
-      image: mockDetail.image,
+      image: 'https://ipfs.io/ipfs/' + fundraising.nft?.image,
+      isVerified: fundraising.nft?.isVerified,
 
       // Additional RWADetailProps fields
       description: mockDetail.description,
@@ -418,17 +420,58 @@ export default function RWADetail() {
     }
   };
 
-  if (!mockRWADetail) {
-    return <div>Property not found</div>;
-  }
+  const handleVerify = async () => {
+    try {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
 
-  if (loading) return <Loading />;
-  if (error) return <div>Error loading data</div>;
+      const contract = new ethers.Contract(
+        CONTRACT_ADDRESSES.NFT as `0x${string}`,
+        NFT_ABI,
+        signer
+      );
+
+      const tokenId = fundraising.nft?.tokenId;
+      // alert(fundraising.address);
+      // alert(tokenId); // Assuming tokenId is available in fundraising data
+      if (!tokenId) {
+        throw new Error('Token ID is missing');
+      }
+
+      const tx = await contract.verifyProperty(tokenId);
+      await tx.wait();
+      refetchData(); // Refetch data after transaction confirmation
+
+      console.log('Property verified:', tx);
+      alert('Asset verified successfully!');
+      // Add success notification here
+    } catch (error) {
+      console.error('Verification error:', error);
+      alert('Error verifying asset. Check console for details.');
+      // Add error notification here
+    }
+  };
+
+  const [imageSrc, setImageSrc] = useState('');
 
   // Combine real and mock data with null check
   const rwaDetail = fundraising
     ? getRWADetail(fundraising, mockRWADetail)
     : mockRWADetail;
+
+  // // Ensure imageSrc is updated when rwaDetail changes
+  // useEffect(() => {
+  //   if (rwaDetail) {
+  //     setImageSrc(rwaDetail.image);
+  //   }
+  // }, [rwaDetail]);
+
+  if (loading) return <Loading />;
+  if (error) return <div>Error loading data</div>;
+
+  if (!rwaDetail) {
+    return <div>Property not found</div>;
+  }
 
   // Helper functions
   const formatAmount = (amount: string) => {
@@ -480,11 +523,16 @@ export default function RWADetail() {
           {/* Image Section */}
           <div className='relative h-[600px] lg:h-full rounded-lg overflow-hidden'>
             <Image
-              src={rwaDetail.image}
+              src={imageSrc}
               alt={rwaDetail.name}
               fill
               className='object-cover'
               priority
+              onError={() =>
+                setImageSrc(
+                  'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800&auto=format&fit=crop&q=60'
+                )
+              }
             />
           </div>
 
@@ -493,7 +541,26 @@ export default function RWADetail() {
             {/* Title Area */}
             <div className='mb-6'>
               <h1 className='font-display text-4xl uppercase tracking-wider text-text-primary mb-2'>
-                {rwaDetail.name}
+                <span className='flex items-center gap-x-2'>
+                  {rwaDetail.name}
+                  {rwaDetail.isVerified ? (
+                    <Image
+                      src={goldTickBadge}
+                      alt='Gold Tick Badge'
+                      width={25}
+                      height={25}
+                      className='ml-1'
+                      title='Verified Asset'
+                    />
+                  ) : (
+                    <button
+                      onClick={handleVerify}
+                      className='ml-2 px-1 py-0.5 bg-blue-500 text-white text-xs rounded'
+                    >
+                      Verify Raise Fund
+                    </button>
+                  )}
+                </span>
               </h1>
               <p className='text-text-secondary flex items-center gap-2'>
                 <svg

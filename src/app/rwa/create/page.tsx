@@ -18,7 +18,6 @@ export default function CreateRWA() {
     location: '',
     targetAmount: '',
     currency: 'USDT',
-    description: '',
     area: '',
     propertyType: '',
     documents: '',
@@ -120,6 +119,13 @@ export default function CreateRWA() {
   async function handleMintNFT() {
     try {
       setIsPending(true); // Start loading
+
+      // Check if an image has been uploaded
+      if (!formData.imageIPFS) {
+        alert('Please upload an image before proceeding.');
+        return;
+      }
+
       if (!window.ethereum) {
         alert('MetaMask is not installed. Please install it to continue.');
         return;
@@ -137,10 +143,12 @@ export default function CreateRWA() {
       );
 
       const mintResult = await contract.mintProperty(
+        formData.propertyName,
         formData.location,
         BigInt(formData.area),
         formData.propertyType,
-        formData.documents
+        formData.documents,
+        formData.imageIPFS
       );
 
       // console.log('Mint transaction sent:', mintResult);
@@ -277,9 +285,9 @@ export default function CreateRWA() {
         <div className='mb-8'>
           <div className='flex justify-between'>
             <span
-              className={
+              className={`${
                 currentStep >= 0 ? 'text-prime-gold' : 'text-text-secondary'
-              }
+              } mb-2`}
             >
               Tokenize your property
             </span>
@@ -304,13 +312,30 @@ export default function CreateRWA() {
         {currentStep === 0 && (
           <div>
             {/* Mint NFT Step */}
-            <h2 className='font-display text-xl uppercase tracking-wider text-text-primary'>
+            <h2 className='font-display text-xl uppercase tracking-wider text-text-primary mb-6'>
               Tokenize your property
             </h2>
             {/* Form */}
             <form className='space-y-8'>
+              {/* Name Field */}
+
               {/* Basic Information */}
-              <div className='space-y-6'>
+              <div className='space-y-3'>
+                <label className='block text-sm uppercase tracking-wider text-text-secondary mb-0'>
+                  Property Name
+                </label>
+                <input
+                  type='text'
+                  name='propertyName'
+                  value={formData.propertyName}
+                  onChange={handleInputChange}
+                  className='w-full px-4 py-2 bg-prime-gray border border-prime-gold/10 
+                           rounded text-text-primary placeholder-text-secondary/50
+                           focus:outline-none focus:border-prime-gold/30
+                           transition-all duration-300 mt-0'
+                  placeholder='e.g., My Property'
+                  required
+                />
                 <h2 className='font-display text-xl uppercase tracking-wider text-text-primary'>
                   {/* Basic Information */}
                 </h2>
@@ -479,26 +504,7 @@ export default function CreateRWA() {
                   />
                 </div>
               </div>
-              {/* Description */}
-              <div className='space-y-6'>
-                <h2 className='font-display text-xl uppercase tracking-wider text-text-primary'>
-                  Description
-                </h2>
-                <div className='space-y-2'>
-                  <textarea
-                    name='description'
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className='w-full px-4 py-3 bg-prime-gray border border-prime-gold/10 
-                             rounded text-text-primary placeholder-text-secondary/50
-                             focus:outline-none focus:border-prime-gold/30
-                             transition-all duration-300'
-                    placeholder='Describe your property in detail...'
-                    required
-                  />
-                </div>
-              </div>
+
               {/* Image Upload */}
               <div className='space-y-6'>
                 <h2 className='font-display text-xl uppercase tracking-wider text-text-primary'>
@@ -514,6 +520,13 @@ export default function CreateRWA() {
                       <Image
                         src={imagePreview}
                         alt='Preview'
+                        fill
+                        className='object-cover'
+                      />
+                    ) : formData.imageIPFS ? (
+                      <Image
+                        src={`https://ipfs.io/ipfs/${formData.imageIPFS}`}
+                        alt='IPFS Image'
                         fill
                         className='object-cover'
                       />
@@ -599,6 +612,10 @@ export default function CreateRWA() {
                   <span>{formData.area + ' (sq ft)'}</span>
                 </div>
                 <div className='flex justify-between'>
+                  <strong>Duration:</strong>{' '}
+                  <span>{formData.durationDays + ' days'}</span>
+                </div>
+                <div className='flex justify-between'>
                   <strong>Target Amount:</strong>{' '}
                   <span>
                     {formData.targetAmount} {formData.currency}
@@ -617,24 +634,8 @@ export default function CreateRWA() {
                   </span>
                 </div>
                 <div className='flex justify-between'>
-                  <strong>Description:</strong>{' '}
-                  <span>{formData.description}</span>
-                </div>
-                <div className='flex justify-between'>
                   <strong>Documents:</strong> <span>{formData.documents}</span>
                 </div>
-                {/* Display Image from IPFS */}
-                {formData.imageIPFS && (
-                  <div className='flex justify-center mt-4'>
-                    <Image
-                      src={`https://ipfs.io/ipfs/${formData.imageIPFS}`}
-                      alt='Property Image'
-                      width={400}
-                      height={225}
-                      className='rounded-lg'
-                    />
-                  </div>
-                )}
               </div>
             </div>
 
