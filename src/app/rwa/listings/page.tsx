@@ -79,19 +79,23 @@ export default function ListedRWA() {
       };
     }) || mockRWAItems;
 
-  const filteredItems = rwaItems.filter((item) => {
-    const searchLower = searchTerm.toLowerCase();
-    const matchesSearch =
-      item.name.toLowerCase().includes(searchLower) ||
-      item.location.toLowerCase().includes(searchLower);
-    const matchesType = selectedTypes.length
-      ? selectedTypes.includes(item.type)
-      : true;
-    const matchesStatus = selectedStatuses.length
-      ? selectedStatuses.includes(item.status)
-      : true;
-    return matchesSearch && matchesType && matchesStatus;
-  });
+  const filteredItems = rwaItems
+    .filter((item) => {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch =
+        item.name.toLowerCase().includes(searchLower) ||
+        item.location.toLowerCase().includes(searchLower);
+      const matchesType = selectedTypes.length
+        ? selectedTypes.includes(item.type)
+        : true;
+      const matchesStatus = selectedStatuses.length
+        ? selectedStatuses.includes(item.status)
+        : true;
+      return matchesSearch && matchesType && matchesStatus;
+    })
+    .sort((a, b) =>
+      a.status === 'Active' ? -1 : b.status === 'Active' ? 1 : 0
+    );
 
   const toggleTypeSelect = (type: string) => {
     setSelectedTypes((prev) =>
