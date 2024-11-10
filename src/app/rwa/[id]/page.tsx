@@ -468,7 +468,7 @@ export default function RWADetail() {
       refetchData(); // Refetch data after transaction confirmation
 
       console.log('Property verified:', tx);
-      alert('Asset verified successfully!');
+      // alert('Asset verified successfully!');
       // Add success notification here
     } catch (error) {
       console.error('Verification error:', error);
